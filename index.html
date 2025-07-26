@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>띠빙고</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght%40400;600;700&display=swap" rel="stylesheet">
     <style>
         /* IMPORTANT: Ensure .hidden overrides all display properties */
@@ -71,9 +69,7 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            /* background-color: #ffcccc; /* TEMPORARY DEBUG BACKGROUND */ */
             min-height: 200px; /* Ensure it has height */
-            /* box-shadow: 0 0 10px red; /* Visual cue */ */
         }
 
         #wordInput {
@@ -289,9 +285,7 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            /* background-color: #ffcccc; /* TEMPORARY DEBUG BACKGROUND */ */
             min-height: 200px; /* Ensure it has height */
-            /* box-shadow: 0 0 10px red; /* Visual cue */ */
         }
 
         #student-loading-message {
@@ -318,7 +312,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            /* Removed initial 'display: none;' here, relying solely on 'hidden' class */
+            display: none; /* Hidden by default */
         }
 
         #nameEntryModal .modal-content {
@@ -513,7 +507,7 @@
             cursor: pointer;
             transition: all 0.2s ease-in-out;
         }
-        #activateGameBtn:hover:not(:disabled) {
+        #activateGameBtn:hover:not(.disabled) {
             background-color: #059669; /* Emerald 600 */
             transform: translateY(-3px) scale(1.02);
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.7);
@@ -632,10 +626,8 @@
     <div class="container">
         <h1 class="text-4xl font-extrabold text-gray-800 mb-6">띠빙고</h1>
 
-        <!-- This button allows teacher to switch to student view for testing. Hidden for actual student links. -->
         <button id="switchViewBtn" class="view-toggle-btn">학생용 화면으로 전환</button>
 
-        <!-- Teacher View -->
         <div id="teacher-view" class="w-full">
             <p class="text-gray-700 text-lg mb-4 text-center">
                 아래에 영어 단어를 쉼표(,)로 구분하여 <strong>최소 5개</strong> 입력해주세요.<br>
@@ -662,15 +654,12 @@
             <div id="beltStatus" class="mt-8 p-4 bg-blue-50 rounded-lg shadow-inner text-gray-700">
                 <h2 class="text-xl font-semibold mb-2 text-center">현재 학생 진행 상태</h2>
                 <div id="teacherStudentsStatus">
-                    <!-- Student belt words will be displayed here -->
                     <p class="text-gray-500">띠빙고가 시작되면 여기에 학생 진행 상태가 표시됩니다.</p>
                 </div>
             </div>
         </div>
 
-        <!-- Student View -->
         <div id="student-view" class="hidden">
-            <!-- Initial loading message is now handled differently based on gameData -->
             <div id="student-loading-message" class="text-xl text-gray-600 mt-8 text-center">
                 선생님께서 단어를 설정하기를 기다리는 중입니다...
             </div>
@@ -679,15 +668,13 @@
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">단어 배치하기</h2>
                 <p class="text-gray-700 mb-4">아래 단어를 드래그하거나 클릭하여 띠의 빈 칸에 배치하세요.</p>
                 <div id="wordsToPlace">
-                    <!-- Available words for placement will be rendered here -->
-                </div>
+                    </div>
             </div>
             
             <div id="belt-section" class="w-full max-w-[800px] mt-4">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">단어 띠</h2>
                 <div id="studentBelt">
-                    <!-- Student's word belt will be rendered here -->
-                </div>
+                    </div>
                 <p class="text-gray-600 text-sm mt-2 text-center">
                     '게임 시작!' 후에는 양 끝 단어만 제거할 수 있어요.
                 </p>
@@ -698,10 +685,8 @@
 
         <div id="messageBox" class=""></div>
         
-        <!-- BINGO Overlay (shared) -->
         <div id="bingoOverlay" style="display: none;">BINGO!</div> 
 
-        <!-- Student Name Entry Modal -->
         <div id="nameEntryModal" class="hidden">
             <div class="modal-content">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">이름(별명)을 입력하세요</h2>
@@ -712,7 +697,6 @@
         </div>
     </div>
 
-    <!-- Firebase CDN Imports -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -835,19 +819,16 @@
 
                         const urlParams = new URLSearchParams(window.location.search);
                         const gameIdFromUrl = urlParams.get('gameId');
-                        console.log("Parsed gameIdFromUrl INSIDE onAuthStateChanged:", gameIdFromUrl); // New crucial log location
+                        console.log("Parsed gameIdFromUrl INSIDE onAuthStateChanged:", gameIdFromUrl); 
 
                         if (gameIdFromUrl) {
                             // Student path
                             currentGameId = gameIdFromUrl;
-                            teacherView.style.display = 'none'; // Ensure teacher view is hidden
-                            studentView.style.display = 'flex'; // Ensure student view is shown
+                            teacherView.style.display = 'none'; // Explicitly hide teacher view
+                            studentView.style.display = 'flex'; // Explicitly show student view (flex for centering)
                             switchViewBtn.style.display = 'none'; // Hide switch button for students
 
-                            // Ensure studentDocRef is set for the current user and game
-                            studentDocRef = getStudentDocRef(currentGameId, currentUserId);
-
-                            nameEntryModal.classList.remove('hidden'); // Show name entry modal
+                            nameEntryModal.classList.remove('hidden'); // Show name entry modal immediately
                             console.log("Student path: nameEntryModal should be visible.");
 
                             // Student content areas initially hidden, shown after name entry and data load
@@ -869,7 +850,7 @@
 
                             gameLinkContainer.classList.add('hidden'); // Hide link container initially
 
-                            addWordsBtn.disabled = false; // Enable teacher buttons
+                            addWordsBtn.disabled = false; 
                             resetGameBtn.disabled = false;
 
                             // If teacher had a previous game, load it and subscribe to students
@@ -884,7 +865,6 @@
                             }
                         }
                     } else {
-                        // User not authenticated or signed out
                         currentUserId = null;
                         console.log("No user signed in.");
                         addWordsBtn.disabled = true;
@@ -936,7 +916,7 @@
                 currentUserName = name; 
                 
                 // Ensure studentDocRef is set before any Firestore operations
-                if (!studentDocRef) {
+                if (!studentDocRef || studentDocRef.id !== currentUserId) { // Re-check if studentDocRef needs re-setting for this user
                     studentDocRef = getStudentDocRef(currentGameId, currentUserId);
                 }
                 console.log("studentDocRef after setting in joinGame:", studentDocRef); // Debug log
@@ -967,7 +947,7 @@
                 // Subscribe to game updates immediately after joining.
                 // The onSnapshot listener will handle displaying the game content once teacherWords are available.
                 subscribeToGameUpdates(currentGameId);
-                console.log("Subscribing to game updates for student:", currentGameId); // Debug log
+                console.log("Subscribing to game updates for student AFTER JOIN:", currentGameId); // Debug log
 
                 showMessage(`${currentUserName}님, 게임에 참여했습니다!`, 'success');
 
@@ -990,6 +970,7 @@
                     }
                 } else {
                     showMessage("학생 상태 업데이트에 필요한 정보가 부족합니다.", 'error');
+                    console.error("Missing prerequisites for updateStudentStateInFirestore", {currentGameId, currentUserId, dbInitialized: !!db});
                     return;
                 }
             }
@@ -1026,17 +1007,21 @@
             unsubscribeGame = onSnapshot(getGameDocRef(gameId), async (docSnapshot) => {
                 if (docSnapshot.exists()) {
                     const gameData = docSnapshot.data();
-                    console.log("Game data updated for student (onSnapshot):", gameData); // Crucial log
+                    console.log("Game data received by student (onSnapshot):", gameData); // Crucial log
+                    console.log("Student received teacherWords:", gameData.teacherWords); // NEW IMPORTANT LOG
+                    console.log("Student received game status:", gameData.status);     // NEW IMPORTANT LOG
 
                     // If teacherWords exist and game is active
-                    if (gameData.teacherWords && gameData.teacherWords.length > 0) {
+                    if (gameData.teacherWords && gameData.teacherWords.length > 0 && (gameData.status === 'placement' || gameData.status === 'started')) { // Added || gameData.status === 'started'
                         originalWords = gameData.teacherWords; // Ensure originalWords is set from teacher's data
+                        console.log("Student: Teacher words received. Original words set to:", originalWords); // New debug log
 
-                        // Initialize belt and available words if they are empty or reset
+                        // Initialize belt and available words if they are empty
+                        // This handles first-time load or after a full reset by teacher
                         if (currentWords.filter(w => w !== null).length === 0 && availableWords.length === 0) {
                              currentWords = new Array(originalWords.length).fill(null);
                              availableWords = shuffleArray([...originalWords]);
-                             console.log("Student initial state reset from teacher data."); // Debug log
+                             console.log("Student: Initial local state reset from teacher data."); // Debug log
                         }
                         
                         studentLoadingMessage.classList.add('hidden'); // Hide loading message
@@ -1058,8 +1043,9 @@
                         renderWordsToPlace();
                         renderStudentBelt();
                         
-                    } else if (gameData.status === 'reset' || !gameData.teacherWords || gameData.teacherWords.length === 0) {
-                        // Teacher reset the game or no words set by teacher yet
+                    } else if (gameData.status === 'reset' || !gameData.teacherWords || gameData.teacherWords.length === 0 || gameData.status === 'started') { // Added 'started' to this branch for explicit handling
+                        // Teacher reset the game or no words set by teacher yet OR game has already started on teacher side
+                        console.log("Student: Game data indicates waiting for teacher or already started (no placement). GameData:", gameData); // Debug log
                         studentLoadingMessage.classList.remove('hidden'); // Show loading message (waiting for teacher)
                         wordsToPlaceSection.style.display = 'none'; // Hide sections
                         beltSection.style.display = 'none';

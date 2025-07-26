@@ -438,29 +438,6 @@
         .color-9 { background-color: #e5f7d4; } /* Light Lime */
         .color-10 { background-color: #f7d1c9; } /* Light Peach */
 
-        /* New style for flipped/deleted cards */
-        .flipped-card {
-            background-color: #e2e8f0; /* Light gray background */
-            color: #a0aec0; /* Darker gray text/icon */
-            font-size: 1.2rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: not-allowed;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); /* Subtle inset shadow */
-            border: 2px dashed #cbd5e1; /* Dashed border like empty slot, but different color */
-            pointer-events: none; /* Make it unclickable after flip */
-            transition: background-color 0.5s ease, color 0.5s ease; /* Smooth transition */
-            opacity: 0; /* Starts transparent */
-            animation: fadeIn 0.5s forwards; /* Fades in when created */
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
         /* Word placement area */
         #wordsToPlace-section {
             width: 100%;
@@ -598,7 +575,7 @@
 
         /* Responsive adjustments for student view */
         @media (max-width: 768px) {
-            .word-card, .empty-slot, .flipped-card { /* Include flipped-card */
+            .word-card, .empty-slot { /* Removed flipped-card */
                 min-width: 70px;
                 height: 90px;
                 font-size: 1rem;
@@ -620,7 +597,7 @@
         }
 
         @media (max-width: 480px) {
-            .word-card, .empty-slot, .flipped-card { /* Include flipped-card */
+            .word-card, .empty-slot { /* Removed flipped-card */
                 min-width: 60px;
                 height: 80px;
                 font-size: 0.9rem;
@@ -1156,17 +1133,9 @@
                 slot.addEventListener('drop', handleDrop);
 
                 if (word === null) {
-                    // If game has started and it's a null (deleted word), show as flipped
-                    if (gameStarted) { 
-                        slot.classList.add('flipped-card');
-                        slot.textContent = '❌'; // Or 'DEL'
-                        slot.draggable = false;
-                        slot.classList.add('non-draggable'); // Prevent pointer events
-                    } else { // Otherwise, it's an empty slot for initial placement
-                        slot.classList.add('empty-slot');
-                        slot.textContent = '빈 칸';
-                        slot.addEventListener('click', handleSlotClick); 
-                    }
+                    slot.classList.add('empty-slot');
+                    slot.textContent = '빈 칸';
+                    slot.addEventListener('click', handleSlotClick); 
                 } else {
                     slot.classList.add('word-card', `color-${(index % cardColors.length) + 1}`);
                     slot.style.backgroundColor = cardColors[index % cardColors.length]; 
@@ -1348,10 +1317,7 @@
                 clickedCard.classList.add('removing'); // Start fade out animation
                 setTimeout(async () => {
                     currentWords[index] = null; // Logically remove the word
-
-                    // No need to manually add flipped-card class here, renderStudentBelt will handle it
-                    // The 'removing' animation will complete, then renderStudentBelt will draw the 'flipped-card'
-                    renderStudentBelt(); 
+                    renderStudentBelt(); // Re-render the belt, will now show as empty slot
 
                     const remainingWordsCount = currentWords.filter(w => w !== null).length;
                     if (remainingWordsCount === 1) {
@@ -1477,9 +1443,8 @@
                         const item = document.createElement('span');
                         item.classList.add('student-belt-preview-item');
                         if (word === null) {
-                            item.textContent = '❌'; // Show 'X' for deleted cards in teacher preview
-                            item.classList.add('empty'); // Use empty for styling as well
-                            item.classList.add('flipped-card-preview'); // New class for preview styling
+                            item.textContent = '빈 칸'; // Show '빈 칸' for deleted cards in teacher preview
+                            item.classList.add('empty');
                         } else {
                             item.textContent = word.length > 5 ? word.substring(0, 5) + '...' : word; 
                         }

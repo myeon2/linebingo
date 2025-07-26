@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>띠빙고</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-x: hidden; /* Prevent horizontal scroll on body */
+            position: relative; /* For modal positioning */
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* Rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Single button for view toggling (visible only on teacher's initial load, can toggle to student view) */
+        #switchViewBtn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px; /* Pill shape */
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border: 2px solid transparent;
+            font-size: 1.125rem; /* text-lg */
+            background-color: #818cf8; /* Indigo 400 */
+            color: white;
+            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);
+            margin-bottom: 2rem;
+            display: none; /* Controlled by JS based on URL */
+        }
+        #switchViewBtn:hover {
+            background-color: #6366f1; /* Indigo 500 */
+        }
+
+        /* Teacher View Specific: Set to block by default in CSS */
+        #teacher-view {
+            width: 100%;
+            display: block; /* Changed to block by default */
+        }
+
+        #wordInput {
+            width: 100%;
+            height: 150px;
+            border: 2px solid #cbd5e1; /* Slate 300 */
+            border-radius: 0.75rem;
+            padding: 1rem;
+            font-size: 1rem;
+            resize: vertical;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #wordInput:focus {
+            border-color: #6366f1; /* Indigo 500 */
+        }
+
+        .teacher-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .teacher-btn {
+            padding: 0.75rem 1.75rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+            cursor: pointer;
+            font-size: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .teacher-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .teacher-btn-primary {
+            background-color: #4f46e5; /* Indigo 600 */
+            color: white;
+        }
+        .teacher-btn-primary:hover {
+            background-color: #4338ca; /* Indigo 700 */
+        }
+
+        .teacher-btn-secondary {
+            background-color: #e0f2f7; /* Light blue 100 */
+            color: #2c5282; /* Dark blue */
+            border: 1px solid #a7d9ee;
+        }
+        .teacher-btn-secondary:hover {
+            background-color: #bee3f8; /* Light blue 200 */
+        }
+        .teacher-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #gameLinkContainer {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #e0f2f7; /* Light blue 100 */
+            border-radius: 0.75rem;
+            text-align: center;
+            word-break: break-all; /* Break long URLs */
+        }
+        #gameLinkInput {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #a7d9ee;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+        }
+        #copyLinkBtn {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background-color: #6366f1;
+            color: white;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+        #copyLinkBtn:hover {
+            background-color: #4f46e5;
+        }
+
+        /* Teacher Students Status Display */
+        #teacherStudentsStatus {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            max-height: 400px; /* Limit height for scroll */
+            overflow-y: auto;
+            padding-bottom: 1rem;
+        }
+        .student-status-card {
+            background-color: #f7fafc; /* White */
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            padding: 1rem;
+            width: calc(50% - 0.5rem); /* Two cards per row on larger screens */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative; /* For BINGO overlay */
+            overflow: hidden; /* For BINGO overlay */
+        }
+        .student-status-card.bingo-achieved {
+            border: 4px solid #10b981; /* Green border for BINGO */
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.7); /* Stronger glow */
+        }
+        .student-status-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 0.75rem;
+            word-break: break-all;
+        }
+        .student-belt-preview {
+            display: flex;
+            flex-wrap: nowrap; /* Keep items in one line */
+            overflow-x: auto; /* Allow horizontal scroll for preview */
+            gap: 0.1rem; /* Small gap for preview cards */
+            padding: 0.5rem 0;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+            background-color: #ecfdf5; /* Light green for belt preview */
+            border-radius: 0.5rem;
+            border: 1px solid #a7f3d0;
+        }
+        .student-belt-preview-item {
+            flex-shrink: 0; /* Prevent shrinking */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #d1fae5; /* Lighter emerald */
+            border-radius: 0.5rem;
+            padding: 0.3rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #065f46;
+            white-space: nowrap;
+            min-width: 40px; /* Small fixed width for preview */
+        }
+        .student-belt-preview-item.empty {
+            background-color: #e2e8f0;
+            color: #94a3b8;
+        }
+        .student-status-message {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+        .teacher-bingo-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(16, 185, 129, 0.8); /* Semi-transparent green */
+            color: white;
+            font-size: 2rem;
+            font-weight: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            animation: fadeInOut 3s forwards; /* Add simple animation for bingo indicator */
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .teacher-bingo-indicator.show {
+            opacity: 1;
+            animation: none; /* Disable animation when permanently shown */
+        }
+
+        /* Message Box (shared) */
+        #messageBox {
+            position: absolute;
+            top: 1.5rem;
+            background-color: #fef08a; /* Yellow 200 */
+            color: #a78b05; /* Yellow 800 */
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            transform: translateY(-20px);
+            z-index: 20;
+        }
+        #messageBox.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Student View: hidden by default */
+        #student-view {
+            display: none;
+            flex-direction: column; /* Ensure vertical layout for student content */
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Student Name Modal: hidden by default */
+        #nameEntryModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Dark overlay */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100; /* Above everything else */
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-input {
+            width: calc(100% - 2rem);
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .modal-input:focus {
+            border-color: #6366f1;
+        }
+        .modal-btn {
+            padding: 0.75rem 2rem;
+            background-color: #4f46e5;
+            color: white;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .modal-btn:hover {
+            background-color: #4338ca;
+        }
+
+        /* Student belt styling */
+        #studentBelt {
+            display: flex;
+            flex-wrap: nowrap; /* Keep words in one line */
+            overflow-x: auto; /* Enable horizontal scrolling if needed */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+            padding: 1rem;
+            gap: 0.2rem; /* Reduced gap */
+            background-color: #ecfdf5; /* Light green background */
+            border-radius: 1rem;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 800px;
+            margin-top: 1.5rem;
+            align-items: stretch; /* Stretch items to same height */
+            scroll-behavior: smooth; /* Smooth scroll when new items appear/disappear */
+        }
+
+        /* Custom scrollbar for Webkit browsers (Chrome, Safari) */
+        #studentBelt::-webkit-scrollbar {
+            height: 8px;
+        }
+        #studentBelt::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        #studentBelt::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        #studentBelt::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .word-card, .empty-slot {
+            flex: 1 1 auto; /* Allow flexibility in sizing */
+            min-width: 80px; /* Minimum width for cards */
+            max-width: 120px; /* Max width to prevent excessive stretching */
+            height: 100px; /* Fixed height for consistent look */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 1.1rem; /* Slightly larger font */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            position: relative;
+            overflow: hidden; /* For animations */
+            word-break: break-all;
+            text-align: center;
+            padding: 0.5rem; /* Padding for word content */
+            box-sizing: border-box; /* Include padding in width/height */
+        }
+
+        .word-card {
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .empty-slot {
+            background-color: #e2e8f0; /* Light gray for empty slot */
+            border: 2px dashed #a0aec0; /* Dashed border */
+            color: #718096;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .word-card:hover:not(.disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        .word-card.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Specific card colors (pastel tones) */
+        .color-1 { background-color: #f7cac9; } /* Light Pink */
+        .color-2 { background-color: #d4e3f5; } /* Light Blue */
+        .color-3 { background-color: #c9f7c9; } /* Light Green */
+        .color-4 { background-color: #f5d4e3; } /* Light Purple */
+        .color-5 { background-color: #f7e9c9; } /* Light Yellow */
+        .color-6 { background-color: #a7e9e5; } /* Light Aqua */
+        .color-7 { background-color: #f1c9f7; } /* Light Magenta */
+        .color-8 { background-color: #c9c9f7; } /* Light Lavender */
+        .color-9 { background-color: #e5f7d4; } /* Light Lime */
+        .color-10 { background-color: #f7d1c9; } /* Light Peach */
+
+
+        /* Word placement area */
+        #wordsToPlace-section {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #e0f2f7;
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        #wordsToPlace {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .available-word-card {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: grab;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .available-word-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .available-word-card.selected {
+            border: 2px solid #6366f1; /* Highlight when selected */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+            transform: scale(1.05);
+        }
+        .available-word-card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        /* Slot highlight for drag & drop */
+        .empty-slot.drag-over {
+            border-color: #4f46e5;
+            background-color: #eef2ff; /* Light indigo background */
+            transform: scale(1.05);
+        }
+        .word-card.drag-over { /* For reordering existing words */
+            border: 2px dashed #4f46e5;
+            transform: scale(1.02);
+        }
+
+        /* Start Game Button */
+        #activateGameBtn {
+            margin-top: 2rem;
+            padding: 1rem 2.5rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 1.5rem;
+            background-color: #10b981; /* Emerald 500 */
+            color: white;
+            box-shadow: 0 6px 15px rgba(16, 185, 129, 0.5);
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        #activateGameBtn:hover:not(:disabled) {
+            background-color: #059669; /* Emerald 600 */
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.7);
+        }
+        #activateGameBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* BINGO! Overlay */
+        #bingoOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 6rem;
+            font-weight: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none; /* Allow clicks to pass through when hidden */
+            transition: opacity 0.5s ease-out;
+        }
+        #bingoOverlay.show {
+            opacity: 1;
+            animation: bingoPulse 1s infinite alternate; /* Pulsing effect */
+        }
+        @keyframes bingoPulse {
+            from {
+                transform: scale(1);
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            }
+            to {
+                transform: scale(1.1);
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.6);
+            }
+        }
+
+        /* Word removal animation */
+        .word-card.removing {
+            animation: fadeOutShrink 0.5s forwards;
+            pointer-events: none; /* Disable clicks during animation */
+        }
+        @keyframes fadeOutShrink {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        /* Word flash animation for invalid clicks */
+        .word-card.flash-red {
+            animation: flashRed 0.5s ease-in-out;
+        }
+        @keyframes flashRed {
+            0% { background-color: inherit; transform: scale(1); }
+            25% { background-color: #ef4444; transform: scale(1.02); } /* Red 500 */
+            50% { background-color: inherit; transform: scale(1); }
+            75% { background-color: #ef4444; transform: scale(1.02); }
+            100% { background-color: inherit; transform: scale(1); }
+        }
+
+        /* Responsive adjustments for student view */
+        @media (max-width: 768px) {
+            .word-card, .empty-slot {
+                min-width: 70px;
+                height: 90px;
+                font-size: 1rem;
+            }
+            #studentBelt {
+                padding: 0.8rem;
+            }
+            #wordsToPlace-section {
+                padding: 0.8rem;
+            }
+            .available-word-card {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+            #activateGameBtn {
+                font-size: 1.25rem;
+                padding: 0.8rem 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .word-card, .empty-slot {
+                min-width: 60px;
+                height: 80px;
+                font-size: 0.9rem;
+            }
+            #studentBelt {
+                padding: 0.5rem;
+            }
+            #wordsToPlace-section {
+                padding: 0.5rem;
+            }
+            .available-word-card {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.8rem;
+            }
+            #activateGameBtn {
+                font-size: 1.1rem;
+                padding: 0.6rem 1.5rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-4xl font-extrabold text-gray-800 mb-6">띠빙고</h1>
+
+        <!-- This button allows teacher to switch to student view for testing. Hidden for actual student links. -->
+        <button id="switchViewBtn" class="view-toggle-btn">학생용 화면으로 전환</button>
+
+        <!-- Teacher View -->
+        <div id="teacher-view" class="w-full">
+            <p class="text-gray-700 text-lg mb-4 text-center">
+                아래에 영어 단어를 쉼표(,)로 구분하여 <strong>최소 10개</strong> 입력해주세요.<br>
+                입력된 단어의 수만큼 학생 화면에 빈 칸이 생성됩니다.
+                예: apple,banana,cat,dog,elephant,fish,grape,house,ice,juice,kiwi,lion
+            </p>
+            <textarea id="wordInput" placeholder="여기에 영어 단어를 입력하세요 (예: apple, banana, cat...)"></textarea>
+            
+            <div class="teacher-buttons">
+                <button id="addWordsBtn" class="teacher-btn teacher-btn-primary" disabled>
+                    <span id="startStopText">띠빙고 시작</span>
+                </button>
+                <button id="resetGameBtn" class="teacher-btn teacher-btn-secondary" disabled>
+                    게임 리셋
+                </button>
+            </div>
+
+            <div id="gameLinkContainer" class="hidden">
+                <p class="text-lg font-semibold mb-2">학생 초대 링크:</p>
+                <input type="text" id="gameLinkInput" readonly>
+                <button id="copyLinkBtn">링크 복사</button>
+            </div>
+
+            <div id="beltStatus" class="mt-8 p-4 bg-blue-50 rounded-lg shadow-inner text-gray-700">
+                <h2 class="text-xl font-semibold mb-2 text-center">현재 학생 진행 상태</h2>
+                <div id="teacherStudentsStatus">
+                    <!-- Student belt words will be displayed here -->
+                    <p class="text-gray-500">띠빙고가 시작되면 여기에 학생 진행 상태가 표시됩니다.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student View -->
+        <div id="student-view" class="hidden">
+            <div id="wordsToPlace-section">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">단어 배치하기</h2>
+                <p class="text-gray-700 mb-4">아래 단어를 드래그하거나 클릭하여 띠의 빈 칸에 배치하세요.</p>
+                <div id="wordsToPlace">
+                    <!-- Available words for placement will be rendered here -->
+                </div>
+            </div>
+            
+            <div id="belt-section" class="w-full max-w-[800px] mt-4">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">단어 띠</h2>
+                <div id="studentBelt">
+                    <!-- Student's word belt will be rendered here -->
+                </div>
+                <p class="text-gray-600 text-sm mt-2 text-center">
+                    '게임 시작!' 후에는 양 끝 단어만 제거할 수 있어요.
+                </p>
+            </div>
+
+            <button id="activateGameBtn" class="hidden" disabled>게임 시작!</button>
+        </div>
+
+        <div id="messageBox" class=""></div>
+        
+        <!-- BINGO Overlay (shared) -->
+        <div id="bingoOverlay" style="display: none;">BINGO!</div> 
+    </div>
+
+    <!-- Student Name Entry Modal (Hidden for teacher's direct access) -->
+    <div id="nameEntryModal" class="hidden">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">띠빙고 참여하기</h2>
+            <p class="text-gray-700 mb-4">게임에 참여하려면 이름을 입력하세요.</p>
+            <input type="text" id="studentNameInput" class="modal-input" placeholder="이름을 입력하세요 (예: 김초등)">
+            <button id="joinGameBtn" class="modal-btn">게임 참여</button>
+        </div>
+    </div>
+
+    <!-- Firebase CDN Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Global Variables (Provided by Canvas Environment)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
+
+        let app;
+        let db;
+        let auth;
+        let currentUserId = null;
+        let currentUserName = "익명 학생"; // Default name for display if not set
+        let currentGameId = null;
+        let studentDocRef = null; 
+        let gameDocRef = null; // Reference to the main game document for general use
+
+        let unsubscribeStudents = null; // To manage Firestore student subscription
+        let unsubscribeGame = null; // To manage Firestore game subscription for students
+
+        // --- DOM Elements ---
+        const switchViewBtn = document.getElementById('switchViewBtn');
+        const teacherView = document.getElementById('teacher-view');
+        const studentView = document.getElementById('student-view');
+        const wordInput = document.getElementById('wordInput');
+        const addWordsBtn = document.getElementById('addWordsBtn');
+        const resetGameBtn = document.getElementById('resetGameBtn');
+        const gameLinkContainer = document.getElementById('gameLinkContainer');
+        const gameLinkInput = document.getElementById('gameLinkInput');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const teacherStudentsStatus = document.getElementById('teacherStudentsStatus');
+        const messageBox = document.getElementById('messageBox');
+
+        // Student-specific DOM elements
+        const studentBelt = document.getElementById('studentBelt'); 
+        const bingoOverlay = document.getElementById('bingoOverlay');
+        const wordsToPlaceContainer = document.getElementById('wordsToPlace');
+        const activateGameBtn = document.getElementById('activateGameBtn');
+        const nameEntryModal = document.getElementById('nameEntryModal');
+        const studentNameInput = document.getElementById('studentNameInput');
+        const joinGameBtn = document.getElementById('joinGameBtn');
+
+
+        let originalWords = []; // Teacher's full list of words
+        let currentWords = []; // Student's belt state (includes null for empty slots)
+        let availableWords = []; // Words student still needs to place
+        let selectedWordForPlacement = null; // For click-to-place logic
+        let draggedItem = { type: null, word: null, originalIndex: null }; // For drag & drop
+
+        let currentView = 'teacher'; // 'teacher' or 'student'
+        let gameStarted = false; // True when '게임 시작!' button is pressed by student
+        let initialPlacementComplete = false; 
+
+        // Pastel card colors
+        const cardColors = [
+            '#f7cac9', '#d4e3f5', '#c9f7c9', '#f5d4e3', '#f7e9c9',
+            '#a7e9e5', '#f1c9f7', '#c9c9f7', '#e5f7d4', '#f7d1c9'
+        ];
+
+        // --- Utility Functions ---
+        function showMessage(message, type = 'warning') {
+            messageBox.textContent = message;
+            messageBox.className = 'message-box show'; // Remove previous classes, add 'show'
+            if (type === 'error') {
+                messageBox.style.backgroundColor = '#fca5a5';
+                messageBox.style.color = '#dc2626';
+            } else if (type === 'success') {
+                messageBox.style.backgroundColor = '#d9f99d';
+                messageBox.style.color = '#3f6212';
+            } else { // info or warning
+                messageBox.style.backgroundColor = '#fef08a';
+                messageBox.style.color = '#a78b05';
+            }
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 1500);
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array]; // Create a shallow copy to avoid modifying original
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // --- Firebase Initialization and Authentication ---
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in with custom token if available, otherwise anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        console.log("Firebase initialized. User ID:", currentUserId);
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const gameIdFromUrl = urlParams.get('gameId');
+                        console.log("Game ID from URL:", gameIdFromUrl);
+
+                        if (gameIdFromUrl) {
+                            // Student path
+                            currentGameId = gameIdFromUrl;
+                            gameDocRef = getGameDocRef(currentGameId); // Set global gameDocRef for students
+                            studentDocRef = getStudentDocRef(currentGameId, currentUserId);
+
+                            teacherView.classList.add('hidden');
+                            studentView.classList.add('hidden'); // Keep student view hidden until name input
+                            switchViewBtn.classList.add('hidden'); // Hide switch button for students
+
+                            // Check if student has a name in local storage for this game
+                            const storedName = localStorage.getItem(`studentName_${currentGameId}`);
+                            if (storedName) {
+                                currentUserName = storedName;
+                                await joinGame(storedName); // Auto-join if name exists
+                            } else {
+                                nameEntryModal.classList.remove('hidden'); // Show name entry modal
+                            }
+                            
+                            // Disable teacher buttons as it's a student view
+                            addWordsBtn.disabled = true;
+                            resetGameBtn.disabled = true;
+
+                        } else {
+                            // Teacher path
+                            teacherView.classList.remove('hidden'); // Ensure teacher view is visible
+                            studentView.classList.add('hidden');
+                            nameEntryModal.classList.add('hidden'); // Ensure modal is hidden
+                            switchViewBtn.classList.remove('hidden'); // Show switch button for teacher
+                            switchViewBtn.textContent = '학생용 화면으로 전환';
+                            currentView = 'teacher';
+                            
+                            // Enable teacher buttons
+                            addWordsBtn.disabled = false; 
+                            resetGameBtn.disabled = false;
+
+                            // If teacher already has an active game, resubscribe to student updates
+                            if (localStorage.getItem('teacherCurrentGameId')) {
+                                currentGameId = localStorage.getItem('teacherCurrentGameId');
+                                gameLinkInput.value = `${window.location.origin}?gameId=${currentGameId}`;
+                                gameLinkContainer.classList.remove('hidden');
+                                gameDocRef = getGameDocRef(currentGameId); // Set global gameDocRef for teacher
+                                subscribeToStudentUpdates(currentGameId);
+                            }
+                        }
+                    } else {
+                        currentUserId = null;
+                        console.log("No user signed in.");
+                        addWordsBtn.disabled = true;
+                        resetGameBtn.disabled = true;
+                        showMessage("Firebase 인증 대기 중...", 'info');
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase or authenticating:", error);
+                showMessage("Firebase 초기화 또는 인증 오류. 인터넷 연결을 확인하세요.", 'error');
+                addWordsBtn.disabled = true;
+                resetGameBtn.disabled = true;
+            }
+        }
+
+
+        // --- Firestore Data Operations ---
+
+        function getGameDocRef(gameId) {
+            if (!db) {
+                console.error("Firestore DB not initialized.");
+                return null;
+            }
+            return doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+        }
+
+        function getStudentDocRef(gameId, userId) {
+            if (!db) {
+                console.error("Firestore DB not initialized.");
+                return null;
+            }
+            return doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'students', userId);
+        }
+
+        // --- Student View Logic ---
+
+        // Join game (from modal)
+        joinGameBtn.addEventListener('click', async () => {
+            const name = studentNameInput.value.trim();
+            if (!name) {
+                showMessage('이름을 입력해주세요!', 'error');
+                return;
+            }
+            currentUserName = name;
+            localStorage.setItem(`studentName_${currentGameId}`, name); // Store name for persistence
+            await joinGame(name);
+        });
+
+        async function joinGame(name) {
+            try {
+                if (!currentGameId || !currentUserId || !db) {
+                    showMessage('게임 참여에 필요한 정보가 부족합니다.', 'error');
+                    return;
+                }
+                
+                // Set initial student state in Firestore
+                await setDoc(studentDocRef, {
+                    name: name,
+                    belt: [],
+                    availableWords: [], // Will be filled by teacher's data
+                    isGameStarted: false,
+                    isBingo: false,
+                    lastSeen: Date.now()
+                });
+                
+                nameEntryModal.classList.add('hidden'); // Hide modal
+                studentView.classList.remove('hidden'); // Show student view
+
+                // Start listening for game updates from teacher (words, status)
+                subscribeToGameUpdates(currentGameId);
+
+                showMessage(`${name}님, 게임에 참여했습니다!`, 'success');
+
+            } catch (error) {
+                console.error("Error joining game:", error);
+                showMessage("게임 참여 중 오류가 발생했습니다. (콘솔 확인)", 'error');
+            }
+        }
+
+        // Student: Update own state in Firestore
+        async function updateStudentStateInFirestore(beltState, availableState, gameStartedState, isBingoState = false) {
+            if (!studentDocRef) {
+                console.error("Student document reference is not set.");
+                return;
+            }
+            try {
+                await updateDoc(studentDocRef, {
+                    belt: beltState,
+                    availableWords: availableState,
+                    isGameStarted: gameStartedState,
+                    isBingo: isBingoState,
+                    lastSeen: Date.now()
+                });
+            } catch (error) {
+                console.error("Error updating student state in Firestore:", error);
+                // Do not show a message to student for every state update error to avoid spam
+            }
+        }
+
+        // Student: Subscribe to game updates (words from teacher, game status)
+        function subscribeToGameUpdates(gameId) {
+            if (!db || !gameId) {
+                console.warn("Cannot subscribe to game updates: DB or gameId missing.");
+                return;
+            }
+
+            // Unsubscribe from previous listener if exists
+            if (unsubscribeGame) {
+                unsubscribeGame();
+            }
+
+            unsubscribeGame = onSnapshot(getGameDocRef(gameId), async (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const gameData = docSnapshot.data();
+                    console.log("Game data updated for student:", gameData);
+
+                    if (gameData.status === 'reset') {
+                        // Teacher reset the game
+                        resetStudentLocalState();
+                        renderStudentBelt();
+                        renderWordsToPlace();
+                        showMessage("선생님이 게임을 리셋했습니다. 다시 배치해주세요!", 'info');
+                        // Update student's state in firestore to reflect reset
+                        await updateStudentStateInFirestore([], [], false, false);
+                        // Re-fetch teacher words for a new placement round after reset
+                        if (gameData.teacherWords && gameData.teacherWords.length > 0) {
+                            currentWords = new Array(gameData.teacherWords.length).fill(null);
+                            availableWords = shuffleArray([...gameData.teacherWords]);
+                            renderWordsToPlace();
+                        } else {
+                            // If teacher words are also cleared, wait for teacher to set new words
+                            wordsToPlaceContainer.innerHTML = '<p class="text-gray-500 text-md">선생님이 단어를 설정하기를 기다리는 중...</p>';
+                        }
+
+                    } else if (gameData.teacherWords && gameData.teacherWords.length > 0) {
+                        originalWords = gameData.teacherWords;
+                        if (!gameStarted && currentWords.length === 0 && availableWords.length === 0) { // Initial setup or after reset
+                            currentWords = new Array(originalWords.length).fill(null);
+                            availableWords = shuffleArray([...originalWords]);
+                            renderWordsToPlace();
+                            renderStudentBelt();
+                            activateGameBtn.classList.add('hidden'); // Hide until words are placed
+                            activateGameBtn.disabled = true;
+                        } else {
+                            // Update available words only if they differ (e.g., teacher adds more)
+                            // For simplicity, we'll re-render based on current local state and teacher's original words
+                            renderWordsToPlace(); // Re-render in case teacher changed something
+                            renderStudentBelt(); // Re-render belt
+                        }
+                    } else if (!gameData.teacherWords || gameData.teacherWords.length === 0) {
+                        // No words set by teacher yet
+                        studentBelt.innerHTML = '<p class="text-gray-500 text-xl">선생님께서 단어를 입력해주시면 게임이 시작됩니다!</p>';
+                        wordsToPlaceContainer.innerHTML = '<p class="text-gray-500 text-md">선생님께서 단어를 입력해주시면 여기에 배치할 단어가 표시됩니다.</p>';
+                        activateGameBtn.classList.add('hidden');
+                        activateGameBtn.disabled = true;
+                    }
+                } else {
+                    console.log("No such game document!");
+                    showMessage("해당 게임이 존재하지 않거나 종료되었습니다.", 'error');
+                    setTimeout(() => window.location.href = window.location.origin, 2000); // Redirect to teacher view
+                }
+            }, (error) => {
+                console.error("Error listening to game updates for student:", error);
+                showMessage("게임 업데이트 수신 오류.", 'error');
+            });
+        }
+
+
+        // Student: Render available words to place
+        function renderWordsToPlace() {
+            wordsToPlaceContainer.innerHTML = '';
+            if (availableWords.length === 0 && originalWords.length > 0 && !gameStarted) {
+                // All words placed, show activate button
+                activateGameBtn.classList.remove('hidden');
+                activateGameBtn.disabled = false;
+                wordsToPlaceContainer.innerHTML = '<p class="text-green-600 font-semibold">모든 단어를 배치했습니다! ' + (initialPlacementComplete ? '순서를 재배치하거나 ' : '') + '게임 시작 버튼을 누르세요.</p>';
+                return;
+            }
+            if (gameStarted) {
+                wordsToPlaceContainer.innerHTML = '<p class="text-gray-500">게임이 시작되어 단어를 더 이상 배치하거나 재배치할 수 없습니다.</p>';
+                activateGameBtn.classList.add('hidden');
+                activateGameBtn.disabled = true;
+                return;
+            }
+            if (originalWords.length === 0) {
+                 wordsToPlaceContainer.innerHTML = '<p class="text-gray-500 text-md">선생님께서 단어를 입력해주시면 여기에 배치할 단어가 표시됩니다.</p>';
+                 return;
+            }
+
+
+            availableWords.forEach((word, index) => {
+                const wordCard = document.createElement('div');
+                wordCard.classList.add('available-word-card');
+                wordCard.textContent = word;
+                wordCard.dataset.word = word;
+                wordCard.dataset.index = index; // Original index in availableWords
+                wordCard.draggable = true; // Make draggable
+
+                wordCard.addEventListener('click', handleAvailableWordClick);
+                wordCard.addEventListener('dragstart', handleDragStart);
+                wordCard.addEventListener('dragend', handleDragEnd);
+                wordsToPlaceContainer.appendChild(wordCard);
+            });
+        }
+
+        // Student: Render the belt (empty slots and placed words)
+        function renderStudentBelt() {
+            studentBelt.innerHTML = '';
+            if (currentWords.length === 0 && originalWords.length > 0) {
+                currentWords = new Array(originalWords.length).fill(null); // Initialize empty belt slots
+            } else if (originalWords.length === 0) {
+                 studentBelt.innerHTML = '<p class="text-gray-500 text-xl">선생님께서 단어를 입력해주시면 게임이 시작됩니다!</p>';
+                 return;
+            }
+
+
+            currentWords.forEach((word, index) => {
+                const slot = document.createElement('div');
+                slot.dataset.index = index;
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('dragleave', handleDragLeave);
+                slot.addEventListener('drop', handleDrop);
+
+                if (word === null) {
+                    slot.classList.add('empty-slot');
+                    slot.textContent = '빈 칸';
+                    slot.addEventListener('click', handleSlotClick); // For click-to-place
+                } else {
+                    slot.classList.add('word-card', `color-${(index % cardColors.length) + 1}`);
+                    slot.style.backgroundColor = cardColors[index % cardColors.length]; // Apply specific color
+                    slot.textContent = word;
+                    slot.dataset.word = word; // Store word data for click logic
+                    if (!gameStarted) { // Only draggable before game starts
+                        slot.draggable = true;
+                        slot.addEventListener('dragstart', handleDragStart); // For reordering existing words
+                        slot.addEventListener('dragend', handleDragEnd);
+                    } else {
+                        // After game starts, add click listener for removal
+                        slot.addEventListener('click', handleWordClick);
+                        slot.classList.add('non-draggable'); // Indicate non-draggable state
+                    }
+                }
+                studentBelt.appendChild(slot);
+            });
+
+            // Update student state in Firestore after belt rendering (if words are placed)
+            // This is crucial to send the initial empty belt and subsequent placements to Firestore
+            if (currentUserId && currentGameId) {
+                const beltFiltered = currentWords.filter(w => w !== null);
+                initialPlacementComplete = (beltFiltered.length === originalWords.length);
+                updateStudentStateInFirestore(currentWords, availableWords, gameStarted, beltFiltered.length === 1);
+            }
+        }
+        
+        // Student: Click an available word to select it
+        function handleAvailableWordClick(event) {
+            if (gameStarted) return; // Cannot place words after game starts
+            
+            // Deselect previous word if any
+            if (selectedWordForPlacement) {
+                const prevSelected = document.querySelector('.available-word-card.selected');
+                if (prevSelected) prevSelected.classList.remove('selected');
+            }
+
+            const clickedWordCard = event.target;
+            selectedWordForPlacement = clickedWordCard.dataset.word;
+            clickedWordCard.classList.add('selected');
+            showMessage(`${selectedWordForPlacement} 단어를 선택했습니다. 띠의 빈 칸을 클릭하여 배치하세요.`, 'info');
+        }
+
+        // Student: Click an empty slot to place the selected word
+        async function handleSlotClick(event) {
+            if (gameStarted) return; // Cannot place words after game starts
+            
+            const clickedSlot = event.target;
+            if (clickedSlot.classList.contains('empty-slot') && selectedWordForPlacement) {
+                const slotIndex = parseInt(clickedSlot.dataset.index);
+
+                // Update local state
+                currentWords[slotIndex] = selectedWordForPlacement;
+                availableWords = availableWords.filter(word => word !== selectedWordForPlacement);
+                
+                // Reset selection
+                selectedWordForPlacement = null;
+                const prevSelected = document.querySelector('.available-word-card.selected');
+                if (prevSelected) prevSelected.classList.remove('selected');
+
+                renderWordsToPlace(); // Re-render available words
+                renderStudentBelt();  // Re-render belt with new word
+
+                showMessage(`${currentWords[slotIndex]} 단어를 배치했습니다.`, 'success');
+            } else if (!selectedWordForPlacement) {
+                showMessage('먼저 배치할 단어를 위에서 선택해주세요.', 'warning');
+            }
+        }
+
+        // Student: Drag & Drop handlers
+        function handleDragStart(event) {
+            if (gameStarted) { // Cannot drag words after game starts
+                event.preventDefault(); 
+                return;
+            }
+
+            const targetCard = event.target;
+            draggedItem.word = targetCard.dataset.word;
+            draggedItem.originalIndex = parseInt(targetCard.dataset.index);
+
+            if (targetCard.classList.contains('available-word-card')) {
+                draggedItem.type = 'available';
+            } else if (targetCard.classList.contains('word-card')) {
+                draggedItem.type = 'belt';
+            }
+            
+            event.dataTransfer.setData('text/plain', draggedItem.word); // Set data for Firefox
+            event.dataTransfer.effectAllowed = 'move';
+            targetCard.classList.add('dragging');
+            console.log('Drag started:', draggedItem);
+        }
+
+        function handleDragEnd(event) {
+            if (draggedItem.type === 'available') {
+                const draggedElement = document.querySelector(`.available-word-card.dragging`);
+                 if (draggedElement) draggedElement.classList.remove('dragging');
+            } else if (draggedItem.type === 'belt') {
+                const draggedElement = document.querySelector(`.word-card.dragging`);
+                if (draggedElement) draggedElement.classList.remove('dragging');
+            }
+            draggedItem = { type: null, word: null, originalIndex: null }; // Reset
+            // Clear any drag-over highlights
+            document.querySelectorAll('.empty-slot.drag-over, .word-card.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+            console.log('Drag ended.');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault(); // Essential to allow drop
+            if (gameStarted) return; // No drag-drop after game starts
+
+            const target = event.target.closest('.empty-slot, .word-card');
+            if (target && target !== event.target.closest('.word-card.dragging')) { // Don't highlight self
+                event.dataTransfer.dropEffect = 'move';
+                target.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(event) {
+            if (gameStarted) return;
+            const target = event.target.closest('.empty-slot, .word-card');
+            if (target) {
+                target.classList.remove('drag-over');
+            }
+        }
+
+        async function handleDrop(event) {
+            event.preventDefault();
+            if (gameStarted) return;
+
+            const targetSlot = event.target.closest('.empty-slot, .word-card');
+            if (!targetSlot) return;
+
+            targetSlot.classList.remove('drag-over');
+
+            const targetIndex = parseInt(targetSlot.dataset.index);
+            const droppedWord = draggedItem.word;
+
+            if (!droppedWord) return;
+
+            if (draggedItem.type === 'available') {
+                // Dragging from "words to place" to belt
+                if (currentWords[targetIndex] === null) { // Only drop into empty slots
+                    currentWords[targetIndex] = droppedWord;
+                    availableWords = availableWords.filter(word => word !== droppedWord);
+                    showMessage(`${droppedWord} 단어를 배치했습니다.`, 'success');
+                } else {
+                    showMessage('빈 칸에만 배치할 수 있어요!', 'warning');
+                }
+            } else if (draggedItem.type === 'belt') {
+                // Reordering words within the belt
+                const originalBeltIndex = draggedItem.originalIndex;
+
+                if (originalBeltIndex === targetIndex) {
+                    // Dropped on itself, no change
+                    return;
+                }
+                
+                // Swap words
+                const temp = currentWords[targetIndex];
+                currentWords[targetIndex] = droppedWord;
+                currentWords[originalBeltIndex] = temp;
+                showMessage('단어 순서를 변경했습니다.', 'info');
+            }
+            
+            renderWordsToPlace();
+            renderStudentBelt(); // Re-render both for updated state
+
+            // Update student state in Firestore after drag & drop
+            await updateStudentStateInFirestore(currentWords, availableWords, gameStarted, currentWords.filter(w => w !== null).length === 1);
+        }
+
+
+        // Student: Click word on belt for removal (after game starts)
+        async function handleWordClick(event) {
+            if (!gameStarted) {
+                showMessage('게임을 시작한 후에 단어를 제거할 수 있어요!', 'warning');
+                return;
+            }
+
+            const clickedCard = event.target.closest('.word-card');
+            if (!clickedCard || clickedCard.classList.contains('removing')) return;
+
+            const index = parseInt(clickedCard.dataset.index);
+            const beltLength = currentWords.filter(w => w !== null).length; // Count actual words
+
+            // Check if it's an end word
+            const isLeftEnd = currentWords[index] !== null && (index === 0 || currentWords.slice(0, index).every(w => w === null));
+            const isRightEnd = currentWords[index] !== null && (index === currentWords.length - 1 || currentWords.slice(index + 1).every(w => w === null));
+            
+            if (isLeftEnd || isRightEnd) {
+                // Allow removal
+                clickedCard.classList.add('removing');
+                setTimeout(async () => {
+                    currentWords[index] = null; // Remove from local array
+                    renderStudentBelt(); // Re-render belt
+
+                    const remainingWordsCount = currentWords.filter(w => w !== null).length;
+                    if (remainingWordsCount === 1) {
+                        showBingo();
+                        await updateStudentStateInFirestore(currentWords, availableWords, gameStarted, true); // Update isBingo to true
+                        showMessage('마지막 단어입니다! BINGO!', 'success');
+                    } else if (remainingWordsCount === 0) {
+                        // All words removed, reset for a new game, but maybe show a game over message
+                        showMessage('모든 단어를 제거했습니다! 게임이 종료됩니다.', 'success');
+                        await updateStudentStateInFirestore(currentWords, availableWords, gameStarted, false); // No bingo if 0 words
+                        // Optional: Reset game locally or wait for teacher to reset
+                        resetStudentLocalState();
+                        renderStudentBelt();
+                        renderWordsToPlace();
+                    }
+                    else {
+                        await updateStudentStateInFirestore(currentWords, availableWords, gameStarted, false); // Update state, not bingo
+                    }
+                }, 500); // Match CSS animation duration
+            } else {
+                // Not an end word, flash red
+                clickedCard.classList.add('flash-red');
+                showMessage('삭제 불가! 양 끝 단어만 터치할 수 있어요.', 'error');
+                setTimeout(() => {
+                    clickedCard.classList.remove('flash-red');
+                }, 500);
+            }
+        }
+
+        // Student: Show BINGO! animation
+        function showBingo() {
+            bingoOverlay.style.display = 'flex';
+            bingoOverlay.classList.add('show');
+            // Remove after some time, or wait for teacher reset
+            // setTimeout(() => {
+            //     bingoOverlay.classList.remove('show');
+            //     bingoOverlay.style.display = 'none';
+            // }, 5000); 
+        }
+
+        // Student: Activate game (after placement)
+        activateGameBtn.addEventListener('click', async () => {
+            if (availableWords.length > 0) {
+                showMessage('모든 단어를 띠에 배치해야 게임을 시작할 수 있어요!', 'warning');
+                return;
+            }
+            if (!currentUserId || !currentGameId) {
+                showMessage('게임 시작 중 오류가 발생했습니다. 다시 참여해주세요.', 'error');
+                return;
+            }
+            gameStarted = true;
+            initialPlacementComplete = true; // Mark initial placement as complete
+            activateGameBtn.classList.add('hidden'); // Hide the start button
+            activateGameBtn.disabled = true;
+
+            // Make words in belt non-draggable for students and attach click listeners
+            document.querySelectorAll('#studentBelt .word-card').forEach(card => {
+                card.draggable = false;
+                card.classList.add('non-draggable');
+                card.removeEventListener('dragstart', handleDragStart);
+                card.removeEventListener('dragend', handleDragEnd);
+                card.addEventListener('click', handleWordClick); // Add click listener for removal
+            });
+
+            document.querySelectorAll('#wordsToPlace .available-word-card').forEach(card => {
+                card.removeEventListener('click', handleAvailableWordClick);
+                card.removeEventListener('dragstart', handleDragStart);
+                card.removeEventListener('dragend', handleDragEnd);
+                card.classList.add('disabled');
+            });
+            wordsToPlaceContainer.innerHTML = '<p class="text-gray-500">게임이 시작되어 단어를 더 이상 배치하거나 재배치할 수 없습니다.</p>';
+
+
+            await updateStudentStateInFirestore(currentWords, availableWords, true, false); // Set isGameStarted to true
+            showMessage('게임 시작! 양 끝 단어를 제거하세요!', 'success');
+        });
+
+        // Student: Reset local state (called by teacher's global reset or internal logic)
+        function resetStudentLocalState() {
+            currentWords = [];
+            availableWords = [];
+            selectedWordForPlacement = null;
+            draggedItem = { type: null, word: null, originalIndex: null };
+            gameStarted = false;
+            initialPlacementComplete = false;
+            if (bingoOverlay) {
+                bingoOverlay.classList.remove('show');
+                bingoOverlay.style.display = 'none';
+            }
+            if (activateGameBtn) {
+                activateGameBtn.classList.add('hidden');
+                activateGameBtn.disabled = true;
+            }
+            showMessage('게임이 초기화되었습니다.', 'info');
+            // Clear belt and available words display
+            if (studentBelt) studentBelt.innerHTML = '<p class="text-gray-500 text-xl">선생님께서 단어를 입력해주시면 게임이 시작됩니다!</p>';
+            if (wordsToPlaceContainer) wordsToPlaceContainer.innerHTML = '<p class="text-gray-500 text-md">선생님께서 단어를 입력해주시면 여기에 배치할 단어가 표시됩니다.</p>';
+        }
+
+        // --- Teacher View Logic ---
+
+        // Render live status of all students
+        function renderTeacherStudentsStatus(studentsData) {
+            teacherStudentsStatus.innerHTML = ''; // Clear existing status
+            if (Object.keys(studentsData).length === 0) {
+                teacherStudentsStatus.innerHTML = '<p class="text-gray-500">띠빙고가 시작되면 여기에 학생 진행 상태가 표시됩니다.</p>';
+                return;
+            }
+
+            for (const userId in studentsData) {
+                const student = studentsData[userId];
+                const studentCard = document.createElement('div');
+                studentCard.classList.add('student-status-card');
+
+                if (student.isBingo) {
+                    studentCard.classList.add('bingo-achieved');
+                    const bingoIndicator = document.createElement('div');
+                    bingoIndicator.classList.add('teacher-bingo-indicator', 'show');
+                    bingoIndicator.textContent = 'BINGO!';
+                    studentCard.appendChild(bingoIndicator);
+                }
+
+                const nameElement = document.createElement('h3');
+                nameElement.classList.add('student-status-name');
+                nameElement.textContent = student.name || `익명 학생 (${userId.substring(0,4)}...)`;
+                studentCard.appendChild(nameElement);
+
+                const beltPreview = document.createElement('div');
+                beltPreview.classList.add('student-belt-preview');
+                if (student.belt && student.belt.length > 0) {
+                    student.belt.forEach(word => {
+                        const item = document.createElement('span');
+                        item.classList.add('student-belt-preview-item');
+                        if (word === null) {
+                            item.textContent = '☐';
+                            item.classList.add('empty');
+                        } else {
+                            // Truncate if too long for preview
+                            item.textContent = word.length > 5 ? word.substring(0, 5) + '...' : word; 
+                        }
+                        beltPreview.appendChild(item);
+                    });
+                } else {
+                    beltPreview.textContent = '띠가 설정되지 않음';
+                    beltPreview.classList.add('text-gray-400');
+                }
+                studentCard.appendChild(beltPreview);
+
+                const statusMessage = document.createElement('p');
+                statusMessage.classList.add('student-status-message');
+                if (student.isBingo) {
+                    statusMessage.textContent = 'BINGO 달성!';
+                    statusMessage.style.color = '#059669'; // Green
+                } else if (!student.belt || student.belt.filter(w => w !== null).length === 0) {
+                    statusMessage.textContent = '대기 중 (단어 설정 필요)';
+                    statusMessage.style.color = '#94a3b8';
+                } else if (student.availableWords && student.availableWords.length > 0 && !student.isGameStarted) {
+                    statusMessage.textContent = `단어 배치 중 (${student.availableWords.length}개 남음)`;
+                    statusMessage.style.color = '#94a3b8';
+                } else if (student.isGameStarted) {
+                    const remaining = student.belt.filter(w => w !== null).length;
+                    statusMessage.textContent = `게임 중 (${remaining}개 남음)`;
+                    statusMessage.style.color = '#f59e0b'; // Orange for in progress
+                } else {
+                    statusMessage.textContent = '단어 배치 완료 (게임 시작 대기 중)';
+                    statusMessage.style.color = '#1d4ed8'; // Blue for placed but not started
+                }
+                studentCard.appendChild(statusMessage);
+
+                teacherStudentsStatus.appendChild(studentCard);
+            }
+        }
+
+        // Teacher: Add words and start game (initial setup)
+        addWordsBtn.addEventListener('click', async () => {
+            const input = wordInput.value.trim();
+            if (!input) {
+                showMessage('단어를 입력해주세요!', 'error');
+                return;
+            }
+            const words = input.split(',').map(word => word.trim()).filter(word => word.length > 0);
+
+            if (words.length < 10) {
+                showMessage(`단어를 최소 10개 입력해야 합니다. 현재 ${words.length}개 입력되었습니다.`, 'error');
+                return;
+            }
+
+            if (!currentUserId) {
+                showMessage('교사 사용자 인증이 필요합니다. 새로고침 후 다시 시도해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const newGameId = `game-${Date.now()}`;
+                currentGameId = newGameId; 
+                localStorage.setItem('teacherCurrentGameId', currentGameId);
+
+                gameDocRef = getGameDocRef(currentGameId); // Set global gameDocRef for teacher
+
+                if (!db) {
+                    showMessage('데이터베이스가 준비되지 않았습니다. 잠시 후 다시 시도해주세요.', 'error');
+                    console.error('Firestore DB is null when trying to start game.');
+                    return;
+                }
+
+                await setDoc(gameDocRef, {
+                    teacherWords: words,
+                    status: 'placement', // Initial status
+                    teacherId: currentUserId,
+                    createdAt: Date.now()
+                });
+
+                const gameLink = `${window.location.origin}?gameId=${currentGameId}`;
+                gameLinkInput.value = gameLink;
+                gameLinkContainer.classList.remove('hidden');
+
+                subscribeToStudentUpdates(currentGameId);
+
+                originalWords = words;
+                showMessage('새로운 게임이 시작되었습니다! 학생들에게 링크를 공유하세요.', 'success');
+            } catch (error) {
+                console.error("Error starting new game:", error);
+                showMessage("게임 시작 오류. 다시 시도해주세요. (콘솔 확인)", 'error');
+            }
+        });
+
+        // Teacher: Reset game
+        resetGameBtn.addEventListener('click', async () => {
+            if (!currentGameId) {
+                showMessage('시작된 게임이 없습니다.', 'info');
+                return;
+            }
+            if (!db) {
+                showMessage('데이터베이스가 준비되지 않았습니다. 잠시 후 다시 시도해주세요.', 'error');
+                console.error('Firestore DB is null when trying to reset game.');
+                return;
+            }
+
+            try {
+                // Set the game status to 'reset' and clear teacherWords to signal to students
+                // Keep the same gameId for this session, but effectively reset it
+                await setDoc(getGameDocRef(currentGameId), { 
+                    teacherWords: [], // Clear words to make students reset
+                    status: 'reset',
+                    teacherId: currentUserId,
+                    createdAt: Date.now(), 
+                });
+
+                // Manually reset student data in the subcollection for robustness
+                const studentsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'games', currentGameId, 'students');
+                const studentDocs = await getDocs(studentsCollectionRef);
+                const resetStudentPromises = [];
+                studentDocs.forEach(sDoc => {
+                    resetStudentPromises.push(setDoc(sDoc.ref, { name: sDoc.data().name, belt: [], availableWords: [], isGameStarted: false, isBingo: false }));
+                });
+                await Promise.all(resetStudentPromises);
+
+                // Clear teacher's local game state
+                originalWords = [];
+                gameDocRef = null; // Clear gameDocRef
+                localStorage.removeItem('teacherCurrentGameId'); 
+                
+                // Unsubscribe students status listener
+                if (unsubscribeStudents) {
+                    unsubscribeStudents();
+                    unsubscribeStudents = null; // Reset for next game
+                }
+
+
+                gameLinkContainer.classList.add('hidden');
+                gameLinkInput.value = '';
+                teacherStudentsStatus.innerHTML = '<p class="text-gray-500">띠빙고가 시작되면 여기에 학생 진행 상태가 표시됩니다.</p>';
+                showMessage('게임이 리셋되었습니다.', 'info');
+                wordInput.value = ''; // Clear word input field
+                addWordsBtn.disabled = false; // Enable add words for a new game
+                resetGameBtn.disabled = true; // Disable reset until new game starts
+
+            } catch (error) {
+                console.error("Error resetting game:", error);
+                showMessage("게임 리셋 오류. 다시 시도해주세요. (콘솔 확인)", 'error');
+            }
+        });
+
+        // Subscribe to real-time updates for students in a game (Teacher side)
+        function subscribeToStudentUpdates(gameId) {
+            if (!db || !gameId) {
+                console.warn("Cannot subscribe to student updates: DB or gameId missing.");
+                return;
+            }
+
+            const studentsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'games', gameId, 'students');
+            
+            if (unsubscribeStudents) { 
+                unsubscribeStudents();
+            }
+
+            unsubscribeStudents = onSnapshot(studentsCollectionRef, (snapshot) => { 
+                const studentsData = {};
+                snapshot.forEach(doc => {
+                    studentsData[doc.id] = doc.data();
+                });
+                renderTeacherStudentsStatus(studentsData);
+                console.log("Students data updated for teacher:", studentsData);
+            }, (error) => {
+                console.error("Error listening to student updates:", error);
+                showMessage("학생 상태 업데이트 수신 오류.", 'error');
+            });
+        }
+
+        // --- Event Listeners and Initial Setup ---
+
+        // Copy game link
+        copyLinkBtn.addEventListener('click', () => {
+            gameLinkInput.select();
+            gameLinkInput.setSelectionRange(0, 99999); // For mobile devices
+            try {
+                document.execCommand('copy');
+                showMessage('링크가 복사되었습니다!', 'success');
+            } catch (err) {
+                console.error('Failed to copy link: ', err);
+                showMessage('링크 복사에 실패했습니다.', 'error');
+            }
+        });
+
+        // This button allows teacher to switch to student view for demonstration/testing
+        switchViewBtn.addEventListener('click', () => {
+            if (currentView === 'teacher') {
+                // If switching from teacher to student
+                teacherView.classList.add('hidden');
+                studentView.classList.remove('hidden');
+                switchViewBtn.textContent = '교사용 화면으로 전환';
+                currentView = 'student';
+                
+                // For teacher's test view, initialize student state from current teacher words
+                if (originalWords.length > 0) { // Only attempt to set up if teacher has defined words
+                    currentWords = new Array(originalWords.length).fill(null);
+                    availableWords = shuffleArray([...originalWords]);
+                    gameStarted = false; 
+                    renderWordsToPlace();
+                    renderStudentBelt();
+                } else {
+                    studentView.innerHTML = `
+                        <div id="wordsToPlace-section">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">단어 배치하기</h2>
+                            <p class="text-gray-700 mb-4">아래 단어를 드래그하거나 클릭하여 띠의 빈 칸에 배치하세요.</p>
+                            <div id="wordsToPlace">
+                                <p class="text-gray-500 text-md">선생님께서 단어를 입력해주시면 여기에 배치할 단어가 표시됩니다.</p>
+                            </div>
+                        </div>
+                        <div id="belt-section" class="w-full max-w-[800px] mt-4">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">단어 띠</h2>
+                            <div id="studentBelt">
+                                <p class="text-gray-500 text-xl">선생님께서 단어를 입력해주시면 게임이 시작됩니다!</p>
+                            </div>
+                            <p class="text-gray-600 text-sm mt-2 text-center">
+                                '게임 시작!' 후에는 양 끝 단어만 제거할 수 있어요.
+                            </p>
+                        </div>
+                        <button id="activateGameBtn" class="hidden" disabled>게임 시작!</button>
+                    `;
+                     // Need to re-get references after innerHTML change
+                    // This is a common pitfall when dynamically changing large DOM sections
+                    // For a full app, consider more robust rendering libraries or smaller updates
+                    // For simplicity here, we assume a fresh load or direct teacher test.
+                }
+
+
+            } else { // currentView === 'student' (teacher is viewing student screen)
+                studentView.classList.add('hidden');
+                teacherView.classList.remove('hidden');
+                switchViewBtn.textContent = '학생용 화면으로 전환';
+                currentView = 'teacher';
+                if (currentGameId) { // Ensure subscribing if there's an active game
+                    subscribeToStudentUpdates(currentGameId); 
+                }
+            }
+        });
+
+        // Initial setup on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase(); 
+        });
+
+    </script>
+</body>
+</html>
+

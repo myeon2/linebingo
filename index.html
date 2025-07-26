@@ -57,10 +57,10 @@
             background-color: #6366f1; /* Indigo 500 */
         }
 
-        /* Teacher View Specific: Hidden by default in CSS, shown by JS if no gameId */
+        /* Teacher View Specific: Visible by default unless JS hides it for student path */
         #teacher-view {
             width: 100%;
-            display: none; /* Controlled by JS */
+            /* Removed display: none; from here. Now controlled solely by .hidden class from JS */
         }
 
         /* Student View: hidden by default, shown by JS if gameId */
@@ -281,7 +281,7 @@
 
         /* Student View: hidden by default */
         #student-view {
-            display: flex; /* Changed to flex, hidden by .hidden class */
+            display: flex; /* Changed to flex default for student view, hidden by .hidden class */
             flex-direction: column;
             align-items: center;
             width: 100%;

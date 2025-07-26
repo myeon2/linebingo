@@ -9,6 +9,11 @@
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght%40400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* IMPORTANT: Ensure .hidden overrides all display properties */
+        .hidden {
+            display: none !important;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; /* Light blue-gray background */
@@ -66,6 +71,9 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
+            /* background-color: #ffcccc; /* TEMPORARY DEBUG BACKGROUND */ */
+            min-height: 200px; /* Ensure it has height */
+            /* box-shadow: 0 0 10px red; /* Visual cue */ */
         }
 
         #wordInput {
@@ -281,6 +289,9 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
+            /* background-color: #ffcccc; /* TEMPORARY DEBUG BACKGROUND */ */
+            min-height: 200px; /* Ensure it has height */
+            /* box-shadow: 0 0 10px red; /* Visual cue */ */
         }
 
         #student-loading-message {
@@ -303,11 +314,11 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
+            display: flex; /* Default is flex, rely on .hidden to hide */
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            display: none; /* Hidden by default */
+            /* Removed initial 'display: none;' here, relying solely on 'hidden' class */
         }
 
         #nameEntryModal .modal-content {
@@ -809,82 +820,80 @@
         // --- Firebase Initialization and Authentication ---
         async function initializeFirebase() {
             try {
-                // Diagnostic logs for URL parsing
-                console.log("Current URL at start of initializeFirebase:", window.location.href);
-                console.log("window.location.search at start of initializeFirebase:", window.location.search);
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const gameIdFromUrl = urlParams.get('gameId');
-                console.log("Parsed gameIdFromUrl at start of initializeFirebase:", gameIdFromUrl); // Crucial log
-
+                // Initialize app, db, auth outside onAuthStateChanged for immediate use
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
 
                 await signInAnonymously(auth); // Authenticate anonymously first
 
-                // Now, after sign-in, determine the view based on gameIdFromUrl
-                // onAuthStateChanged will confirm currentUserId
-                if (gameIdFromUrl) {
-                    // Student path: always show student view, then name modal
-                    currentGameId = gameIdFromUrl;
-                    teacherView.style.display = 'none';
-                    studentView.style.display = 'flex'; // Use flex for student view to center content
-                    switchViewBtn.style.display = 'none'; // Hide switch button for students
-
-                    nameEntryModal.classList.remove('hidden'); // Show name entry modal immediately
-
-                    // Student content areas initially hidden, shown after name entry and data load
-                    wordsToPlaceSection.style.display = 'none';
-                    beltSection.style.display = 'none';
-                    activateGameBtn.style.display = 'none';
-                    studentLoadingMessage.classList.add('hidden'); // Hidden until game data actually needed
-
-                    addWordsBtn.disabled = true; // Teacher buttons disabled for student view
-                    resetGameBtn.disabled = true;
-
-                } else {
-                    // Teacher path: always show teacher view
-                    teacherView.style.display = 'block';
-                    studentView.style.display = 'none';
-                    switchViewBtn.style.display = 'block';
-                    switchViewBtn.textContent = '학생용 화면으로 전환';
-                    currentView = 'teacher';
-
-                    gameLinkContainer.classList.add('hidden'); // Hide link container initially
-
-                    addWordsBtn.disabled = false; // Enable teacher buttons
-                    resetGameBtn.disabled = false;
-
-                    // If teacher had a previous game, load it and subscribe to students
-                    if (localStorage.getItem('teacherCurrentGameId')) {
-                        currentGameId = localStorage.getItem('teacherCurrentGameId');
-                        gameLinkInput.value = `${window.location.origin}${window.location.pathname}?gameId=${currentGameId}`;
-                        gameLinkContainer.classList.remove('hidden');
-                        gameDocRef = getGameDocRef(currentGameId);
-                        subscribeToStudentUpdates(currentGameId); // Teacher subscribes to student updates
-                    }
-                }
-
                 // This confirms currentUserId once auth state is stable
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         currentUserId = user.uid;
                         console.log("User ID confirmed by onAuthStateChanged:", currentUserId);
-                        // If it's a student path and they've just authenticated/reloaded, ensure studentDocRef is set
-                        if (gameIdFromUrl && !studentDocRef) {
+
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const gameIdFromUrl = urlParams.get('gameId');
+                        console.log("Parsed gameIdFromUrl INSIDE onAuthStateChanged:", gameIdFromUrl); // New crucial log location
+
+                        if (gameIdFromUrl) {
+                            // Student path
+                            currentGameId = gameIdFromUrl;
+                            teacherView.style.display = 'none'; // Ensure teacher view is hidden
+                            studentView.style.display = 'flex'; // Ensure student view is shown
+                            switchViewBtn.style.display = 'none'; // Hide switch button for students
+
+                            // Ensure studentDocRef is set for the current user and game
                             studentDocRef = getStudentDocRef(currentGameId, currentUserId);
-                            // If name modal is hidden (meaning name entered), and not subscribed yet, subscribe now
-                            if (nameEntryModal.classList.contains('hidden') && !unsubscribeGame) {
-                                subscribeToGameUpdates(currentGameId);
+
+                            nameEntryModal.classList.remove('hidden'); // Show name entry modal
+                            console.log("Student path: nameEntryModal should be visible.");
+
+                            // Student content areas initially hidden, shown after name entry and data load
+                            wordsToPlaceSection.style.display = 'none';
+                            beltSection.style.display = 'none';
+                            activateGameBtn.style.display = 'none';
+                            studentLoadingMessage.classList.add('hidden'); // Hidden until game data actually needed
+
+                            addWordsBtn.disabled = true; // Teacher buttons disabled for student view
+                            resetGameBtn.disabled = true;
+
+                        } else {
+                            // Teacher path
+                            teacherView.style.display = 'block';
+                            studentView.style.display = 'none';
+                            switchViewBtn.style.display = 'block';
+                            switchViewBtn.textContent = '학생용 화면으로 전환';
+                            currentView = 'teacher';
+
+                            gameLinkContainer.classList.add('hidden'); // Hide link container initially
+
+                            addWordsBtn.disabled = false; // Enable teacher buttons
+                            resetGameBtn.disabled = false;
+
+                            // If teacher had a previous game, load it and subscribe to students
+                            if (localStorage.getItem('teacherCurrentGameId')) {
+                                currentGameId = localStorage.getItem('teacherCurrentGameId');
+                                const url = new URL(window.location.href);
+                                url.searchParams.set('gameId', currentGameId);
+                                gameLinkInput.value = url.toString(); // Uses the current URL and adds/updates gameId param
+                                gameLinkContainer.classList.remove('hidden');
+                                gameDocRef = getGameDocRef(currentGameId);
+                                subscribeToStudentUpdates(currentGameId); // Teacher subscribes to student updates
                             }
                         }
                     } else {
+                        // User not authenticated or signed out
                         currentUserId = null;
                         console.log("No user signed in.");
                         addWordsBtn.disabled = true;
                         resetGameBtn.disabled = true;
                         showMessage("Firebase 인증 대기 중...", 'info');
+                        // Ensure views are hidden if no user is signed in
+                        teacherView.style.display = 'none';
+                        studentView.style.display = 'none';
+                        nameEntryModal.classList.add('hidden'); // Hide modal if no user
                     }
                 });
 
@@ -930,6 +939,7 @@
                 if (!studentDocRef) {
                     studentDocRef = getStudentDocRef(currentGameId, currentUserId);
                 }
+                console.log("studentDocRef after setting in joinGame:", studentDocRef); // Debug log
 
                 // Student's initial join or re-join
                 const studentDocSnap = await getDoc(studentDocRef);
@@ -942,12 +952,14 @@
                         isBingo: false,
                         lastSeen: Date.now()
                     });
+                    console.log("New student document created."); // Debug log
                 } else {
                     const studentData = studentDocSnap.data();
                     currentWords = studentData.belt || [];
                     availableWords = studentData.availableWords || [];
                     gameStarted = studentData.isGameStarted || false;
                     currentUserName = studentData.name || currentUserName; 
+                    console.log("Existing student document loaded:", studentData); // Debug log
                 }
                
                 nameEntryModal.classList.add('hidden'); // Hide modal
@@ -955,6 +967,7 @@
                 // Subscribe to game updates immediately after joining.
                 // The onSnapshot listener will handle displaying the game content once teacherWords are available.
                 subscribeToGameUpdates(currentGameId);
+                console.log("Subscribing to game updates for student:", currentGameId); // Debug log
 
                 showMessage(`${currentUserName}님, 게임에 참여했습니다!`, 'success');
 
@@ -967,7 +980,7 @@
         // Student: Update own state in Firestore
         async function updateStudentStateInFirestore(beltState, availableState, gameStartedState, isBingoState = false) {
             if (!studentDocRef) {
-                console.error("Student document reference is not set. Cannot update student state.");
+                console.error("Student document reference is not set. Attempting to re-initialize.");
                 // Attempt to re-initialize studentDocRef if it's null
                 if (currentGameId && currentUserId) {
                     studentDocRef = getStudentDocRef(currentGameId, currentUserId);
@@ -990,14 +1003,19 @@
                 });
             } catch (error) {
                 console.error("Error updating student state in Firestore:", error);
-                showMessage("학생 상태 업데이트 중 오류 발생. (콘솔 확인)", 'error');
+                // If it's a permission error, show specific message
+                if (error.code === 'permission-denied') {
+                    showMessage("오류: Firestore 권한 문제. 보안 규칙을 확인하세요.", 'error');
+                } else {
+                    showMessage("학생 상태 업데이트 중 오류 발생. (콘솔 확인)", 'error');
+                }
             }
         }
 
         // Student: Subscribe to game updates (words from teacher, game status)
         function subscribeToGameUpdates(gameId) {
             if (!db || !gameId) {
-                console.warn("Cannot subscribe to game updates: DB or gameId missing.");
+                console.warn("Cannot subscribe to game updates: DB or gameId missing. (subscribeToGameUpdates)");
                 return;
             }
 
@@ -1008,17 +1026,17 @@
             unsubscribeGame = onSnapshot(getGameDocRef(gameId), async (docSnapshot) => {
                 if (docSnapshot.exists()) {
                     const gameData = docSnapshot.data();
-                    console.log("Game data updated for student:", gameData);
+                    console.log("Game data updated for student (onSnapshot):", gameData); // Crucial log
 
                     // If teacherWords exist and game is active
                     if (gameData.teacherWords && gameData.teacherWords.length > 0) {
                         originalWords = gameData.teacherWords; // Ensure originalWords is set from teacher's data
 
-                        // Initialize belt and available words if they are empty
-                        // This handles first-time load or after a full reset by teacher
+                        // Initialize belt and available words if they are empty or reset
                         if (currentWords.filter(w => w !== null).length === 0 && availableWords.length === 0) {
                              currentWords = new Array(originalWords.length).fill(null);
                              availableWords = shuffleArray([...originalWords]);
+                             console.log("Student initial state reset from teacher data."); // Debug log
                         }
                         
                         studentLoadingMessage.classList.add('hidden'); // Hide loading message
@@ -1060,7 +1078,12 @@
                 }
             }, (error) => {
                 console.error("Error listening to game updates for student:", error);
-                showMessage("게임 업데이트 수신 오류.", 'error');
+                // If it's a permission error, show specific message
+                if (error.code === 'permission-denied') {
+                    showMessage("오류: Firestore 권한 문제. 보안 규칙을 확인하세요.", 'error');
+                } else {
+                    showMessage("게임 업데이트 수신 오류.", 'error');
+                }
             });
         }
 

@@ -70,7 +70,6 @@
             align-items: center;
             width: 100%;
             min-height: 200px; /* Ensure it has height */
-            /* TEMP DEBUG REMOVED: background-color: #fcebeb; border: 2px dashed red; */
         }
 
         #wordInput {
@@ -299,7 +298,6 @@
         /* Elements that are part of student view but might be hidden initially */
         #wordsToPlace-section, #belt-section, #activateGameBtn {
             display: block; /* Changed to block, hidden by .hidden class */
-            /* TEMP DEBUG REMOVED: background-color: #e6ffe6; border: 2px dashed green; */
         }
 
         /* Student Name Entry Modal */
@@ -440,6 +438,28 @@
         .color-9 { background-color: #e5f7d4; } /* Light Lime */
         .color-10 { background-color: #f7d1c9; } /* Light Peach */
 
+        /* New style for flipped/deleted cards */
+        .flipped-card {
+            background-color: #e2e8f0; /* Light gray background */
+            color: #a0aec0; /* Darker gray text/icon */
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: not-allowed;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); /* Subtle inset shadow */
+            border: 2px dashed #cbd5e1; /* Dashed border like empty slot, but different color */
+            pointer-events: none; /* Make it unclickable after flip */
+            transition: background-color 0.5s ease, color 0.5s ease; /* Smooth transition */
+            opacity: 0; /* Starts transparent */
+            animation: fadeIn 0.5s forwards; /* Fades in when created */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
         /* Word placement area */
         #wordsToPlace-section {
@@ -578,7 +598,7 @@
 
         /* Responsive adjustments for student view */
         @media (max-width: 768px) {
-            .word-card, .empty-slot {
+            .word-card, .empty-slot, .flipped-card { /* Include flipped-card */
                 min-width: 70px;
                 height: 90px;
                 font-size: 1rem;
@@ -600,7 +620,7 @@
         }
 
         @media (max-width: 480px) {
-            .word-card, .empty-slot {
+            .word-card, .empty-slot, .flipped-card { /* Include flipped-card */
                 min-width: 60px;
                 height: 80px;
                 font-size: 0.9rem;
@@ -661,7 +681,7 @@
         </div>
 
         <div id="student-view" class="hidden">
-            <div id="student-loading-message" class="text-xl text-gray-600 mt-8 text-center">
+            <div id="student-loading-message" class="hidden text-xl text-gray-600 mt-8 text-center">
                 선생님께서 단어를 설정하기를 기다리는 중입니다...
             </div>
             
@@ -832,7 +852,7 @@
                             wordsToPlaceSection.classList.add('hidden');
                             beltSection.classList.add('hidden');
                             activateGameBtn.classList.add('hidden');
-                            studentLoadingMessage.classList.remove('hidden'); // Show loading message initially for student
+                            studentLoadingMessage.classList.add('hidden'); // Hidden until game data is confirmed by subscription
 
                             addWordsBtn.disabled = true; 
                             resetGameBtn.disabled = true;
@@ -1136,9 +1156,17 @@
                 slot.addEventListener('drop', handleDrop);
 
                 if (word === null) {
-                    slot.classList.add('empty-slot');
-                    slot.textContent = '빈 칸';
-                    slot.addEventListener('click', handleSlotClick); 
+                    // If game has started and it's a null (deleted word), show as flipped
+                    if (gameStarted) { 
+                        slot.classList.add('flipped-card');
+                        slot.textContent = '❌'; // Or 'DEL'
+                        slot.draggable = false;
+                        slot.classList.add('non-draggable'); // Prevent pointer events
+                    } else { // Otherwise, it's an empty slot for initial placement
+                        slot.classList.add('empty-slot');
+                        slot.textContent = '빈 칸';
+                        slot.addEventListener('click', handleSlotClick); 
+                    }
                 } else {
                     slot.classList.add('word-card', `color-${(index % cardColors.length) + 1}`);
                     slot.style.backgroundColor = cardColors[index % cardColors.length]; 
@@ -1317,9 +1345,12 @@
             const isRightEnd = currentWords[index] !== null && (index === currentWords.length - 1 || currentWords.slice(index + 1).every(w => w === null));
             
             if (isLeftEnd || isRightEnd) {
-                clickedCard.classList.add('removing');
+                clickedCard.classList.add('removing'); // Start fade out animation
                 setTimeout(async () => {
-                    currentWords[index] = null; 
+                    currentWords[index] = null; // Logically remove the word
+
+                    // No need to manually add flipped-card class here, renderStudentBelt will handle it
+                    // The 'removing' animation will complete, then renderStudentBelt will draw the 'flipped-card'
                     renderStudentBelt(); 
 
                     const remainingWordsCount = currentWords.filter(w => w !== null).length;
@@ -1337,7 +1368,7 @@
                     else {
                         await updateStudentStateInFirestore(currentWords, availableWords, gameStarted, false); 
                     }
-                }, 500); 
+                }, 500); // Wait for removing animation to finish
             } else {
                 clickedCard.classList.add('flash-red');
                 showMessage('삭제 불가! 양 끝 단어만 터치할 수 있어요.', 'error');
@@ -1368,6 +1399,7 @@
             activateGameBtn.classList.add('hidden'); 
             activateGameBtn.disabled = true;
 
+            // Remove drag/drop listeners and add click listener for removal
             document.querySelectorAll('#studentBelt .word-card').forEach(card => {
                 card.draggable = false;
                 card.classList.add('non-draggable');
@@ -1445,8 +1477,9 @@
                         const item = document.createElement('span');
                         item.classList.add('student-belt-preview-item');
                         if (word === null) {
-                            item.textContent = '☐';
-                            item.classList.add('empty');
+                            item.textContent = '❌'; // Show 'X' for deleted cards in teacher preview
+                            item.classList.add('empty'); // Use empty for styling as well
+                            item.classList.add('flipped-card-preview'); // New class for preview styling
                         } else {
                             item.textContent = word.length > 5 ? word.substring(0, 5) + '...' : word; 
                         }

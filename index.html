@@ -60,7 +60,7 @@
         /* Teacher View Specific: Hidden by default in CSS, shown by JS if no gameId */
         #teacher-view {
             width: 100%;
-            display: none; /* Changed to none by default */
+            display: none; /* Changed to none by default, controlled by JS */
         }
 
         /* Student View: hidden by default, shown by JS if gameId */
@@ -70,6 +70,7 @@
             align-items: center;
             width: 100%;
             min-height: 200px; /* Ensure it has height */
+            /* TEMP DEBUG: */ background-color: #fcebeb; border: 2px dashed red;
         }
 
         #wordInput {
@@ -449,6 +450,7 @@
             border-radius: 1rem;
             box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             text-align: center;
+            /* TEMP DEBUG: */ background-color: #e6ffe6; border: 2px dashed green;
         }
         #wordsToPlace {
             display: flex;
@@ -701,9 +703,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // 🚨 중요: 여기에 Firebase 프로젝트의 실제 구성 정보를 붙여넣으세요. 🚨
-        // Firebase 콘솔 (https://console.firebase.google.com/) -> 프로젝트 설정 (톱니바퀴 아이콘) -> "내 앱" 섹션의 웹 앱에서 찾을 수 있습니다.
-        // 이 부분의 YOUR_XXX_HERE 값을 실제 값으로 교체하지 않으면 'Firebase 초기화 또는 인증 오류'가 발생합니다.
         const firebaseConfig = {
             apiKey: "AIzaSyA5qKFRBSLPkYr2W-PanM4ujsYjR0cq7Vc",
             authDomain: "linebingo-92525.firebaseapp.com",
@@ -826,15 +825,15 @@
                             studentView.style.display = 'flex'; // Show student view
                             switchViewBtn.style.display = 'none'; // Hide switch button for students
 
-                            nameEntryModal.classList.remove('hidden'); // Show name entry modal
-                            nameEntryModal.style.display = 'flex'; // Explicitly set display for modal
+                            nameEntryModal.style.display = 'flex'; // Explicitly show modal
+                            nameEntryModal.classList.remove('hidden'); // Ensure hidden class is removed
                             console.log("Student path: nameEntryModal should be visible (explicitly set).");
 
                             // Student content areas initially hidden
                             wordsToPlaceSection.style.display = 'none';
                             beltSection.style.display = 'none';
                             activateGameBtn.style.display = 'none';
-                            studentLoadingMessage.classList.add('hidden'); // Hidden until game data actually needed
+                            studentLoadingMessage.style.display = 'none'; // Explicitly hidden initially
 
                             addWordsBtn.disabled = true; 
                             resetGameBtn.disabled = true;
@@ -864,7 +863,7 @@
                             switchViewBtn.textContent = '학생용 화면으로 전환';
                             currentView = 'teacher';
 
-                            gameLinkContainer.classList.add('hidden'); // Hide link container initially
+                            gameLinkContainer.style.display = 'none'; // Hide link container initially
 
                             addWordsBtn.disabled = false; 
                             resetGameBtn.disabled = false;
@@ -875,7 +874,7 @@
                                 const url = new URL(window.location.href);
                                 url.searchParams.set('gameId', currentGameId);
                                 gameLinkInput.value = url.toString(); 
-                                gameLinkContainer.classList.remove('hidden');
+                                gameLinkContainer.style.display = 'block'; // Show link container if game exists
                                 gameDocRef = getGameDocRef(currentGameId);
                                 subscribeToStudentUpdates(currentGameId); 
                             }
@@ -889,8 +888,7 @@
                         // Ensure views are hidden if no user is signed in
                         teacherView.style.display = 'none';
                         studentView.style.display = 'none';
-                        nameEntryModal.classList.add('hidden'); // Hide modal if no user
-                        nameEntryModal.style.display = 'none'; // Explicitly hide
+                        nameEntryModal.style.display = 'none'; // Explicitly hide modal
                     }
                 });
 
@@ -956,7 +954,6 @@
                     console.log("Existing student document loaded from Firestore:", studentData); 
                 }
                
-                nameEntryModal.classList.add('hidden'); // Hide modal
                 nameEntryModal.style.display = 'none'; // Explicitly hide modal
                 
                 subscribeToGameUpdates(currentGameId);
@@ -999,7 +996,7 @@
                 console.error("Error updating student state in Firestore:", error);
                 if (error.code === 'permission-denied') {
                     showMessage("오류: Firestore 권한 문제. 보안 규칙을 확인하세요.", 'error');
-                } else if (error.code === 'not-found') { // New check for 'not-found'
+                } else if (error.code === 'not-found') { 
                     showMessage("오류: 학생 문서가 존재하지 않습니다. 다시 참여해주세요.", 'error');
                     console.error("Student document not found, cannot update. Please ensure initial setDoc succeeded.");
                 }
@@ -1038,8 +1035,8 @@
                              console.log("Student: Initial local state reset from teacher data (empty belt)."); 
                         }
                         
-                        studentLoadingMessage.classList.add('hidden'); 
-                        wordsToPlaceSection.style.display = 'block'; 
+                        studentLoadingMessage.style.display = 'none'; // Hide loading message
+                        wordsToPlaceSection.style.display = 'block'; // Show sections
                         beltSection.style.display = 'block';
                         activateGameBtn.style.display = 'block'; 
 
@@ -1048,7 +1045,7 @@
                         if (availableWords.length === 0 && originalWords.length > 0 && !gameStarted) {
                             activateGameBtn.disabled = false; 
                         } else if (gameStarted) {
-                            activateGameBtn.classList.add('hidden'); 
+                            activateGameBtn.classList.add('hidden'); // Hide if game started
                             activateGameBtn.disabled = true;
                         } else {
                             activateGameBtn.disabled = true; 
@@ -1059,7 +1056,7 @@
                         
                     } else if (gameData.status === 'reset' || !gameData.teacherWords || gameData.teacherWords.length === 0) { 
                         console.log("Student: Game data indicates waiting for teacher or reset. GameData:", gameData); 
-                        studentLoadingMessage.classList.remove('hidden'); 
+                        studentLoadingMessage.style.display = 'block'; // Show loading message (waiting for teacher)
                         wordsToPlaceSection.style.display = 'none'; 
                         beltSection.style.display = 'none';
                         activateGameBtn.style.display = 'none';
@@ -1068,7 +1065,6 @@
                         studentBelt.innerHTML = '<p class="text-gray-500 text-xl">선생님께서 단어를 입력해주시면 게임이 시작됩니다!</p>';
                         wordsToPlaceContainer.innerHTML = '<p class="text-gray-500 text-md">선생님께서 단어를 입력해주시면 여기에 배치할 단어가 표시됩니다.</p>';
                         showMessage("선생님이 게임을 리셋했거나 단어를 설정하지 않았습니다.", 'info');
-                        // No need to update Firestore here, studentDocRef might not be set or already reset by teacher
                     }
                 } else {
                     console.log("No such game document!");
@@ -1533,7 +1529,8 @@
                 const gameLink = url.toString(); // Uses the current URL and adds/updates gameId param
 
                 gameLinkInput.value = gameLink;
-                gameLinkContainer.classList.remove('hidden');
+                gameLinkContainer.classList.remove('hidden'); // Show link container
+                gameLinkContainer.style.display = 'block'; // Explicitly show link container
 
                 subscribeToStudentUpdates(currentGameId);
 
@@ -1588,7 +1585,7 @@
                     unsubscribeStudents = null; 
                 }
 
-                gameLinkContainer.classList.add('hidden');
+                gameLinkContainer.style.display = 'none'; // Explicitly hide link container
                 gameLinkInput.value = '';
                 teacherStudentsStatus.innerHTML = '<p class="text-gray-500">띠빙고가 시작되면 여기에 학생 진행 상태가 표시됩니다.</p>';
                 showMessage('게임이 리셋되었습니다.', 'info');
@@ -1670,7 +1667,7 @@
                 
                 // For teacher's test view, check if game exists to decide what to show
                 if (currentGameId && originalWords.length > 0) { 
-                    studentLoadingMessage.classList.add('hidden'); 
+                    studentLoadingMessage.style.display = 'none'; 
                     wordsToPlaceSection.style.display = 'block'; 
                     beltSection.style.display = 'block';
                     activateGameBtn.style.display = 'block'; 
@@ -1688,13 +1685,12 @@
                     }
 
                 } else { 
-                    studentLoadingMessage.classList.remove('hidden'); // Show waiting message
+                    studentLoadingMessage.style.display = 'block'; // Show waiting message
                     wordsToPlaceContainer.innerHTML = '<p class="text-gray-500 text-md">선생님께서 단어를 입력해주시면 여기에 배치할 단어가 표시됩니다.</p>';
                     studentBelt.innerHTML = '<p class="text-gray-500 text-xl">선생님께서 단어를 입력해주시면 게임이 시작됩니다!</p>';
                     wordsToPlaceSection.style.display = 'none'; 
                     beltSection.style.display = 'none';
                     activateGameBtn.style.display = 'none';
-                    nameEntryModal.classList.add('hidden'); 
                     nameEntryModal.style.display = 'none'; // Explicitly hide
                 }
 

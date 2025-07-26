@@ -60,17 +60,17 @@
         /* Teacher View Specific: Hidden by default in CSS, shown by JS if no gameId */
         #teacher-view {
             width: 100%;
-            display: none; /* Changed to none by default, controlled by JS */
+            display: none; /* Controlled by JS */
         }
 
         /* Student View: hidden by default, shown by JS if gameId */
         #student-view {
-            display: none; /* Initially hidden, controlled by JS */
+            display: flex; /* Changed to flex default for student view, hidden by .hidden class */
             flex-direction: column;
             align-items: center;
             width: 100%;
             min-height: 200px; /* Ensure it has height */
-            /* TEMP DEBUG: */ background-color: #fcebeb; border: 2px dashed red;
+            /* TEMP DEBUG REMOVED: background-color: #fcebeb; border: 2px dashed red; */
         }
 
         #wordInput {
@@ -282,7 +282,7 @@
 
         /* Student View: hidden by default */
         #student-view {
-            display: none; /* Initially hidden, controlled by JS */
+            display: flex; /* Changed to flex, hidden by .hidden class */
             flex-direction: column;
             align-items: center;
             width: 100%;
@@ -298,7 +298,8 @@
 
         /* Elements that are part of student view but might be hidden initially */
         #wordsToPlace-section, #belt-section, #activateGameBtn {
-            display: none; /* Hidden until game data is ready or explicitly set by JS */
+            display: block; /* Changed to block, hidden by .hidden class */
+            /* TEMP DEBUG REMOVED: background-color: #e6ffe6; border: 2px dashed green; */
         }
 
         /* Student Name Entry Modal */
@@ -309,7 +310,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
-            display: flex; /* Default is flex, rely on .hidden to hide */
+            display: flex; /* Changed to flex, hidden by .hidden class */
             justify-content: center;
             align-items: center;
             z-index: 9999 !important; /* Ensure it's on top */
@@ -450,7 +451,6 @@
             border-radius: 1rem;
             box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             text-align: center;
-            /* TEMP DEBUG: */ background-color: #e6ffe6; border: 2px dashed green;
         }
         #wordsToPlace {
             display: flex;
@@ -629,7 +629,7 @@
 
         <button id="switchViewBtn" class="view-toggle-btn">학생용 화면으로 전환</button>
 
-        <div id="teacher-view" class="w-full">
+        <div id="teacher-view" class="hidden">
             <p class="text-gray-700 text-lg mb-4 text-center">
                 아래에 영어 단어를 쉼표(,)로 구분하여 <strong>최소 5개</strong> 입력해주세요.<br>
                 입력된 단어의 수만큼 학생 화면에 빈 칸이 생성됩니다.
@@ -665,14 +665,14 @@
                 선생님께서 단어를 설정하기를 기다리는 중입니다...
             </div>
             
-            <div id="wordsToPlace-section">
+            <div id="wordsToPlace-section" class="hidden">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">단어 배치하기</h2>
                 <p class="text-gray-700 mb-4">아래 단어를 드래그하거나 클릭하여 띠의 빈 칸에 배치하세요.</p>
                 <div id="wordsToPlace">
                     </div>
             </div>
             
-            <div id="belt-section" class="w-full max-w-[800px] mt-4">
+            <div id="belt-section" class="hidden w-full max-w-[800px] mt-4">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">단어 띠</h2>
                 <div id="studentBelt">
                     </div>
@@ -821,19 +821,18 @@
                         if (gameIdFromUrl) {
                             // Student path
                             currentGameId = gameIdFromUrl;
-                            teacherView.style.display = 'none'; 
-                            studentView.style.display = 'flex'; // Show student view
+                            teacherView.classList.add('hidden'); // Hide teacher view
+                            studentView.classList.remove('hidden'); // Show student view
                             switchViewBtn.style.display = 'none'; // Hide switch button for students
 
-                            nameEntryModal.style.display = 'flex'; // Explicitly show modal
-                            nameEntryModal.classList.remove('hidden'); // Ensure hidden class is removed
-                            console.log("Student path: nameEntryModal should be visible (explicitly set).");
+                            nameEntryModal.classList.remove('hidden'); // Show name entry modal
+                            console.log("Student path: nameEntryModal should be visible.");
 
                             // Student content areas initially hidden
-                            wordsToPlaceSection.style.display = 'none';
-                            beltSection.style.display = 'none';
-                            activateGameBtn.style.display = 'none';
-                            studentLoadingMessage.style.display = 'none'; // Explicitly hidden initially
+                            wordsToPlaceSection.classList.add('hidden');
+                            beltSection.classList.add('hidden');
+                            activateGameBtn.classList.add('hidden');
+                            studentLoadingMessage.classList.remove('hidden'); // Show loading message initially for student
 
                             addWordsBtn.disabled = true; 
                             resetGameBtn.disabled = true;
@@ -857,13 +856,13 @@
 
                         } else {
                             // Teacher path
-                            teacherView.style.display = 'block';
-                            studentView.style.display = 'none';
+                            teacherView.classList.remove('hidden'); // Show teacher view
+                            studentView.classList.add('hidden'); // Hide student view
                             switchViewBtn.style.display = 'block';
                             switchViewBtn.textContent = '학생용 화면으로 전환';
                             currentView = 'teacher';
 
-                            gameLinkContainer.style.display = 'none'; // Hide link container initially
+                            gameLinkContainer.classList.add('hidden'); // Hide link container initially
 
                             addWordsBtn.disabled = false; 
                             resetGameBtn.disabled = false;
@@ -874,7 +873,7 @@
                                 const url = new URL(window.location.href);
                                 url.searchParams.set('gameId', currentGameId);
                                 gameLinkInput.value = url.toString(); 
-                                gameLinkContainer.style.display = 'block'; // Show link container if game exists
+                                gameLinkContainer.classList.remove('hidden'); // Show link container if game exists
                                 gameDocRef = getGameDocRef(currentGameId);
                                 subscribeToStudentUpdates(currentGameId); 
                             }
@@ -886,9 +885,9 @@
                         resetGameBtn.disabled = true;
                         showMessage("Firebase 인증 대기 중...", 'info');
                         // Ensure views are hidden if no user is signed in
-                        teacherView.style.display = 'none';
-                        studentView.style.display = 'none';
-                        nameEntryModal.style.display = 'none'; // Explicitly hide modal
+                        teacherView.classList.add('hidden');
+                        studentView.classList.add('hidden');
+                        nameEntryModal.classList.add('hidden'); // Hide modal if no user
                     }
                 });
 
@@ -954,7 +953,7 @@
                     console.log("Existing student document loaded from Firestore:", studentData); 
                 }
                
-                nameEntryModal.style.display = 'none'; // Explicitly hide modal
+                nameEntryModal.classList.add('hidden'); // Hide modal
                 
                 subscribeToGameUpdates(currentGameId);
                 console.log("Subscribing to game updates for student AFTER JOIN:", currentGameId); 
@@ -1035,10 +1034,10 @@
                              console.log("Student: Initial local state reset from teacher data (empty belt)."); 
                         }
                         
-                        studentLoadingMessage.style.display = 'none'; // Hide loading message
-                        wordsToPlaceSection.style.display = 'block'; // Show sections
-                        beltSection.style.display = 'block';
-                        activateGameBtn.style.display = 'block'; 
+                        studentLoadingMessage.classList.add('hidden'); // Hide loading message
+                        wordsToPlaceSection.classList.remove('hidden'); // Show sections
+                        beltSection.classList.remove('hidden');
+                        activateGameBtn.classList.remove('hidden'); 
 
                         gameStarted = gameData.status === 'started'; 
 
@@ -1056,10 +1055,10 @@
                         
                     } else if (gameData.status === 'reset' || !gameData.teacherWords || gameData.teacherWords.length === 0) { 
                         console.log("Student: Game data indicates waiting for teacher or reset. GameData:", gameData); 
-                        studentLoadingMessage.style.display = 'block'; // Show loading message (waiting for teacher)
-                        wordsToPlaceSection.style.display = 'none'; 
-                        beltSection.style.display = 'none';
-                        activateGameBtn.style.display = 'none';
+                        studentLoadingMessage.classList.remove('hidden'); // Show loading message (waiting for teacher)
+                        wordsToPlaceSection.classList.add('hidden'); 
+                        beltSection.classList.add('hidden');
+                        activateGameBtn.classList.add('hidden');
 
                         resetStudentLocalState(); 
                         studentBelt.innerHTML = '<p class="text-gray-500 text-xl">선생님께서 단어를 입력해주시면 게임이 시작됩니다!</p>';
@@ -1585,6 +1584,7 @@
                     unsubscribeStudents = null; 
                 }
 
+                gameLinkContainer.classList.add('hidden'); // Use class for consistency
                 gameLinkContainer.style.display = 'none'; // Explicitly hide link container
                 gameLinkInput.value = '';
                 teacherStudentsStatus.innerHTML = '<p class="text-gray-500">띠빙고가 시작되면 여기에 학생 진행 상태가 표시됩니다.</p>';
@@ -1660,17 +1660,17 @@
         switchViewBtn.addEventListener('click', () => {
             if (currentView === 'teacher') {
                 // If switching from teacher to student
-                teacherView.style.display = 'none'; // Explicitly hide teacher view
-                studentView.style.display = 'flex'; // Explicitly show student view (flex for centering)
+                teacherView.classList.add('hidden'); // Explicitly hide teacher view
+                studentView.classList.remove('hidden'); // Explicitly show student view
                 switchViewBtn.textContent = '교사용 화면으로 전환';
                 currentView = 'student';
                 
                 // For teacher's test view, check if game exists to decide what to show
                 if (currentGameId && originalWords.length > 0) { 
-                    studentLoadingMessage.style.display = 'none'; 
-                    wordsToPlaceSection.style.display = 'block'; 
-                    beltSection.style.display = 'block';
-                    activateGameBtn.style.display = 'block'; 
+                    studentLoadingMessage.classList.add('hidden'); 
+                    wordsToPlaceSection.classList.remove('hidden'); 
+                    beltSection.classList.remove('hidden');
+                    activateGameBtn.classList.remove('hidden'); 
 
                     currentWords = new Array(originalWords.length).fill(null);
                     availableWords = shuffleArray([...originalWords]);
@@ -1685,19 +1685,19 @@
                     }
 
                 } else { 
-                    studentLoadingMessage.style.display = 'block'; // Show waiting message
+                    studentLoadingMessage.classList.remove('hidden'); // Show waiting message
                     wordsToPlaceContainer.innerHTML = '<p class="text-gray-500 text-md">선생님께서 단어를 입력해주시면 여기에 배치할 단어가 표시됩니다.</p>';
                     studentBelt.innerHTML = '<p class="text-gray-500 text-xl">선생님께서 단어를 입력해주시면 게임이 시작됩니다!</p>';
-                    wordsToPlaceSection.style.display = 'none'; 
-                    beltSection.style.display = 'none';
-                    activateGameBtn.style.display = 'none';
-                    nameEntryModal.style.display = 'none'; // Explicitly hide
+                    wordsToPlaceSection.classList.add('hidden'); 
+                    beltSection.classList.add('hidden');
+                    activateGameBtn.classList.add('hidden');
+                    nameEntryModal.classList.add('hidden'); // Hide modal if no game
                 }
 
 
             } else { // currentView === 'student' (teacher is viewing student screen)
-                studentView.style.display = 'none'; // Explicitly hide student view
-                teacherView.style.display = 'block'; // Explicitly show teacher view
+                studentView.classList.add('hidden'); // Explicitly hide student view
+                teacherView.classList.remove('hidden'); // Explicitly show teacher view
                 switchViewBtn.textContent = '학생용 화면으로 전환';
                 currentView = 'teacher';
                 if (currentGameId) { 
